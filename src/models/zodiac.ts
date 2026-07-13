@@ -20,3 +20,19 @@ export type ZodiacSign = (typeof ZODIAC_SIGNS)[number];
 export function isZodiacSign(value: string): value is ZodiacSign {
   return (ZODIAC_SIGNS as readonly string[]).includes(value);
 }
+
+/** Nombre visible en español (con acentos) para cada signo. */
+export const ZODIAC_LABELS: Record<ZodiacSign, string> = {
+  aries: 'Aries',
+  tauro: 'Tauro',
+  geminis: 'Géminis',
+  cancer: 'Cáncer',
+  leo: 'Leo',
+  virgo: 'Virgo',
+  libra: 'Libra',
+  escorpio: 'Escorpio',
+  sagitario: 'Sagitario',
+  capricornio: 'Capricornio',
+  acuario: 'Acuario',
+  piscis: 'Piscis',
+};
