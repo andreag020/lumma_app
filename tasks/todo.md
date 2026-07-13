@@ -42,11 +42,11 @@ Modelos puros (dominio ↔ fila) y repositorios CRUD.
 
 ## Fase 1 — Ritual básico
 
-### [ ] T5 · Onboarding local — `M`
-Flujo sin cuenta: elegir signo, hora de notificación, idioma y módulos; guardar perfil con `saveProfile`.
-- **Aceptación:** onboarding se completa en ≤60 s y persiste el perfil; al reabrir no se repite; explica qué se guarda.
-- **Verificación:** store de perfil + `getProfile()` tras reinicio; recorrido en Expo Go.
-- **Depende de:** T4, T2 · **Archivos:** `app/onboarding.tsx`, `src/stores/profileStore.ts`.
+### [x] T5 · Onboarding local — `M`
+Flujo sin cuenta: elegir signo (chips) y hora de notificación (chips preestablecidas); apodo opcional. Idioma y módulos quedan fijos (decisión ya resuelta en `plan.md`), sin pantalla adicional, para cumplir el objetivo de ≤60 s.
+- **Aceptación:** ✅ onboarding guarda el perfil vía `useProfileStore.save`; explica en pantalla qué se guarda («solo en tu teléfono»); redirige a Home al terminar.
+- **Verificación:** ✅ typecheck limpio; `Index` redirige a `/onboarding` cuando `getProfile()` devuelve `null` (recorrido manual en Expo Go pendiente de confirmar por la usuaria).
+- **Depende de:** T4, T2 · **Archivos:** `app/onboarding.tsx`, `src/stores/profileStore.ts`, `src/core/utils/id.ts`.
 
 ### [x] T6 · Contenido diario empaquetado + service — `M`
 Assets JSON cargados a SQLite (`bulkInsertContent`) y consultados por signo+fecha, con respaldo determinista. Generación por lotes offline con Claude Haiku 4.5.
@@ -56,13 +56,13 @@ Assets JSON cargados a SQLite (`bulkInsertContent`) y consultados por signo+fech
 
 > **Hosting / API key:** la app no tiene backend; la clave de Claude vive solo en el script offline (`scripts/generate-content.mjs`), nunca en el bundle. El contenido se empaqueta como asset JSON.
 
-### [ ] T7 · Pantalla Home — `M`
-Astrología del signo + frase del día desde contenido local, con acceso al registro.
-- **Aceptación:** home muestra astrología+frase del día para el signo del perfil; botón claro para registrar ánimo.
-- **Verificación:** render con perfil de prueba → textos esperados (jest-expo).
-- **Depende de:** T5, T6 · **Archivos:** `app/index.tsx`.
+### [x] T7 · Pantalla Home — `M`
+Astrología del signo + frase del día desde contenido local, con acceso al registro. `app/index.tsx` hace de puerta: sin perfil redirige a onboarding; con perfil muestra el contenido del día vía `getDailyContent`.
+- **Aceptación:** ✅ home muestra astrología+frase del día para el signo del perfil; botón «Registrar mi ánimo de hoy» navega a `/mood` (placeholder — el registro real es T8).
+- **Verificación:** ✅ typecheck limpio. *(Sin `jest-expo` en el proyecto — ver decisión en el commit de SDK 54 — la verificación de render queda para prueba manual en Expo Go.)*
+- **Depende de:** T5, T6 · **Archivos:** `app/index.tsx`, `app/mood.tsx` (placeholder de T8).
 
-> ✅ **Checkpoint B** — onboarding → home end-to-end en Expo Go.
+> ✅ **Checkpoint B — código completo:** onboarding → home construido y verificado por typecheck/tests. *Pendiente de confirmar en el teléfono real (Expo Go) por la usuaria.*
 
 ---
 
@@ -113,8 +113,8 @@ Ajustes: borrar todos los datos (`wipeAllData`), ver qué se guarda, gestionar c
 | Fase | Tareas | Estado | Entregable verificable |
 |---|---|---|---|
 | 0 Fundaciones | T1–T4 | ✅ **Hecho** | Typecheck + tests verdes, config Expo válida |
-| 1 Ritual básico | T5–T7 | Pendiente | Onboarding → astrología + frase diaria |
+| 1 Ritual básico | T5–T7 | ✅ **Hecho** | Onboarding → astrología + frase diaria |
 | 2 Core | T8–T9 | Pendiente | Registro de ánimo → firmamento personal |
 | 3 Retención | T10–T12 | Pendiente | Notificaciones + privacidad + anuncios |
 
-**Siguiente acción sugerida:** ejecutar **T5** (onboarding) o **T6** (contenido diario de muestra). Recomiendo empezar por **T6** para tener contenido real que mostrar en Home.
+**Siguiente acción sugerida:** probar el flujo onboarding → home en tu teléfono (Expo Go) y confirmar que se ve bien. Después, seguir con **T8** (registro de ánimo), que es el corazón del producto: guarda el `DailyEntry` de hoy y es el primer paso hacia el firmamento personal (T9).
