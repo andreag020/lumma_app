@@ -6,17 +6,46 @@
 
 | Documento | Contenido |
 |---|---|
-| [`concepto-de-marca.md`](./concepto-de-marca.md) | Concepto de marca: visión, territorio emocional, símbolos y propuesta de producto. |
-| [`consideraciones-tecnicas-y-herramientas-lumma.md`](./consideraciones-tecnicas-y-herramientas-lumma.md) | Arquitectura local-first, stack recomendado y herramientas de desarrollo. |
+| [`SPEC.md`](./SPEC.md) | Especificación del MVP (objetivo, comandos, estructura, estilo, pruebas, límites). |
+| [`tasks/plan.md`](./tasks/plan.md) | Plan de implementación: fases, dependencias, riesgos y decisiones. |
+| [`tasks/todo.md`](./tasks/todo.md) | Checklist de tareas (T1–T12) con criterios de aceptación. |
+| [`concepto-de-marca.md`](./concepto-de-marca.md) | Concepto de marca: visión, territorio emocional, símbolos y propuesta. |
+| [`consideraciones-tecnicas-y-herramientas-lumma.md`](./consideraciones-tecnicas-y-herramientas-lumma.md) | Arquitectura local-first, stack y herramientas. |
 
 ## Stack (MVP)
 
-- **App móvil:** Flutter o React Native/Expo
-- **Persistencia local:** SQLite + almacenamiento de preferencias
-- **Notificaciones:** locales (sin servidor)
-- **Monetización:** Google AdMob (banner y rewarded)
+- **App móvil:** Expo (React Native + TypeScript) · expo-router
+- **Estado:** Zustand
+- **Persistencia local:** expo-sqlite + expo-secure-store (datos sensibles)
+- **Notificaciones:** expo-notifications (locales, sin servidor)
+- **Monetización:** Google AdMob vía `react-native-google-mobile-ads` (Fase 3, requiere dev build)
 - **Backend:** ninguno al inicio (opcional: microservicio en Render)
-- **IA:** Claude Haiku 4.5 para generación en lote (Batch API)
+- **IA:** Claude Haiku 4.5 para generación de contenido en lote (Batch API), fuera de la app
+
+## Cómo ejecutar
+
+Requiere Node 18+ y la app **Expo Go** en tu teléfono (Android/iOS).
+
+```bash
+npm install --legacy-peer-deps   # instalar dependencias
+npx expo start                   # abre un QR: escanéalo con Expo Go
+```
+
+Otros comandos útiles:
+
+```bash
+npm run typecheck   # comprobar tipos (tsc --noEmit)
+npm test            # pruebas de lógica (Jest)
+```
+
+### Estado de desarrollo
+
+- ✅ **Fase 0 (Fundaciones):** proyecto Expo, tema noche, base SQLite con migraciones, modelos y repositorios, pruebas de modelos. *(Checkpoint A)*
+- ⏳ **Fase 1:** onboarding local, contenido diario, pantalla Home.
+- ⏳ **Fase 2:** registro de ánimo y firmamento personal.
+- ⏳ **Fase 3:** notificaciones, ajustes/privacidad y AdMob.
+
+Ver el detalle y la siguiente tarea en [`tasks/todo.md`](./tasks/todo.md).
 
 ## Desarrollo con Claude Code
 

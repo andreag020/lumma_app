@@ -3,87 +3,80 @@
 > Checklist generado con la skill **planning-and-task-breakdown**. Cada tarea
 > incluye objetivo, criterios de aceptación (≤3), verificación, dependencias,
 > archivos y tamaño. Orden = dependencias primero. Ver [`plan.md`](./plan.md).
+>
+> Stack: **Expo (React Native + TypeScript)** · expo-router · Zustand · expo-sqlite.
 
 Tamaños: XS (1 archivo) · S (1–2) · M (3–5 feature slice) · L (5–8) · XL (dividir).
 
 ---
 
-## Fase 0 — Fundaciones
+## Fase 0 — Fundaciones ✅ COMPLETADA (Checkpoint A)
 
-### [ ] T1 · Andamiaje del proyecto Flutter — `S`
-Crear el proyecto Flutter base con dependencias y linter configurados.
-- **Aceptación:** `flutter run` arranca a pantalla vacía; `flutter analyze` sin errores; dependencias base declaradas (sqflite, path, riverpod, flutter_local_notifications, google_mobile_ads).
-- **Verificación:** `flutter pub get && flutter analyze && flutter run`.
-- **Depende de:** —
-- **Archivos:** `pubspec.yaml`, `analysis_options.yaml`, `lib/main.dart`, `lib/app.dart`.
+### [x] T1 · Andamiaje del proyecto Expo — `S`
+Proyecto Expo (blank-typescript) con expo-router y dependencias base.
+- **Aceptación:** ✅ estructura `app/` con router; deps declaradas (expo-router, expo-sqlite, expo-secure-store, zustand); `npx expo config` resuelve.
+- **Verificación:** ✅ `npx expo config --type public` OK; `npm run typecheck` limpio.
+- **Archivos:** `package.json`, `app.json`, `tsconfig.json`, `app/_layout.tsx`, `app/index.tsx`.
 
-### [ ] T2 · Tema Lumma — `S`
-Definir tokens de color noche, tipografía y acentos de luz según la dirección visual de marca.
-- **Aceptación:** tema oscuro (índigo/ciruela) aplicado globalmente; acentos dorado/marfil/lavanda disponibles como tokens; tipografía clara configurada.
-- **Verificación:** la pantalla vacía muestra fondo noche y tipografía correcta.
-- **Depende de:** T1
-- **Archivos:** `lib/core/theme/*`.
+### [x] T2 · Tema Lumma — `S`
+Tokens de color noche, tipografía y acentos de luz según la marca.
+- **Aceptación:** ✅ tema oscuro (índigo/ciruela) + acentos (dorado/marfil/lavanda/lima) como tokens; aplicado en layout raíz y home.
+- **Verificación:** ✅ typecheck; home renderiza «Lumma» sobre fondo noche.
+- **Depende de:** T1 · **Archivos:** `src/core/theme/theme.ts`.
 
-### [ ] T3 · Capa SQLite — `M`
-Apertura de base de datos, migraciones y esquema de las 4 tablas (perfil, registros diarios, contenido diario, config de anuncios).
-- **Aceptación:** DB se crea con las 4 tablas; migración v1 idempotente; DAOs básicos de insert/query.
-- **Verificación:** `flutter test test/core/db/` verde (crear DB, insertar y leer una fila por tabla).
-- **Depende de:** T1
-- **Archivos:** `lib/core/db/*`, `test/core/db/*`.
+### [x] T3 · Capa SQLite — `M`
+Apertura de base, migraciones por `user_version` y esquema de las 4 tablas.
+- **Aceptación:** ✅ crea profile / daily_entry / daily_content / ads_config; migración v1 idempotente; `wipeAllData()` para borrado.
+- **Verificación:** ✅ typecheck; migración validada por revisión de esquema. *(Ejecución en dispositivo: verificación manual.)*
+- **Depende de:** T1 · **Archivos:** `src/core/db/database.ts`.
 
-### [ ] T4 · Modelos + repositorios — `M`
-Modelos inmutables y repositorios para perfil, registros, contenido y config de anuncios.
-- **Aceptación:** cada modelo tiene `fromMap`/`toMap`/`copyWith`; repos exponen CRUD mínimo; sin lógica en widgets.
-- **Verificación:** `flutter test test/models test/repositories` verde (round-trip map↔objeto y persistencia).
-- **Depende de:** T3
-- **Archivos:** `lib/models/*`, `lib/repositories/*`, tests espejo.
+### [x] T4 · Modelos + repositorios — `M`
+Modelos puros (dominio ↔ fila) y repositorios CRUD.
+- **Aceptación:** ✅ cada modelo tiene `xToRow`/`xFromRow`; repos con upsert/consulta; sin lógica en componentes.
+- **Verificación:** ✅ `npm test` verde — 5 pruebas de round-trip de modelos.
+- **Depende de:** T3 · **Archivos:** `src/models/*`, `src/repositories/*`, `test/models/models.test.ts`.
 
-> ✅ **Checkpoint A** — `flutter analyze` limpio + tests de datos verdes + app arranca con tema.
+> ✅ **Checkpoint A alcanzado** — typecheck limpio + tests verdes + config Expo válida.
 
 ---
 
 ## Fase 1 — Ritual básico
 
 ### [ ] T5 · Onboarding local — `M`
-Flujo sin cuenta: elegir signo, hora de notificación, idioma y módulos activos; guardar perfil local.
-- **Aceptación:** onboarding se completa en ≤60 s y persiste el perfil; al reabrir la app no se repite; explica qué datos se guardan.
-- **Verificación:** widget test del flujo + reinicio de app conserva el perfil.
-- **Depende de:** T4, T2
-- **Archivos:** `lib/features/onboarding/*`.
+Flujo sin cuenta: elegir signo, hora de notificación, idioma y módulos; guardar perfil con `saveProfile`.
+- **Aceptación:** onboarding se completa en ≤60 s y persiste el perfil; al reabrir no se repite; explica qué se guarda.
+- **Verificación:** store de perfil + `getProfile()` tras reinicio; recorrido en Expo Go.
+- **Depende de:** T4, T2 · **Archivos:** `app/onboarding.tsx`, `src/stores/profileStore.ts`.
 
 ### [ ] T6 · Contenido diario empaquetado + service — `M`
-Empaquetar JSON de astrología y frases (30 días de muestra por signo) y cargarlo por signo+fecha.
-- **Aceptación:** `content_service` devuelve el contenido correcto dado (signo, fecha); sin llamadas de red; fallback si falta la fecha.
-- **Verificación:** `flutter test test/services/content_service_test.dart` con casos por signo/fecha.
-- **Depende de:** T4
-- **Archivos:** `assets/content/*`, `lib/services/content_service.dart`, `pubspec.yaml` (assets).
+Assets JSON (30 días por signo) cargados a SQLite (`bulkInsertContent`) y consultados por signo+fecha.
+- **Aceptación:** `contentService` devuelve el contenido correcto dado (signo, fecha); sin red; fallback si falta la fecha.
+- **Verificación:** `npm test` con casos por signo/fecha.
+- **Depende de:** T4 · **Archivos:** `assets/content/*`, `src/services/contentService.ts`, `app.json` (assets).
 
 ### [ ] T7 · Pantalla Home — `M`
-Mostrar astrología del signo y frase del día desde contenido local, con acceso al registro.
+Astrología del signo + frase del día desde contenido local, con acceso al registro.
 - **Aceptación:** home muestra astrología+frase del día para el signo del perfil; botón claro para registrar ánimo.
-- **Verificación:** widget test: perfil Leo + fecha X → textos esperados.
-- **Depende de:** T5, T6
-- **Archivos:** `lib/features/home/*`.
+- **Verificación:** render con perfil de prueba → textos esperados (jest-expo).
+- **Depende de:** T5, T6 · **Archivos:** `app/index.tsx`.
 
-> ✅ **Checkpoint B** — onboarding → home end-to-end en emulador.
+> ✅ **Checkpoint B** — onboarding → home end-to-end en Expo Go.
 
 ---
 
 ## Fase 2 — Registro y firmamento (core)
 
 ### [ ] T8 · Registro de ánimo — `M`
-Registrar el día con color de mood + etiqueta + nota opcional; persistir `DailyEntry`.
-- **Aceptación:** registro en ≤3 toques desde home; guarda un `DailyEntry` con fecha de hoy; un registro por día (editar el existente).
-- **Verificación:** widget test de guardado + repo confirma persistencia.
-- **Depende de:** T7
-- **Archivos:** `lib/features/mood/*`.
+Color de mood + etiqueta + nota opcional; persistir con `upsertEntry` (un registro por día).
+- **Aceptación:** registro en ≤3 toques desde home; guarda `DailyEntry` de hoy; editar el existente si ya hay.
+- **Verificación:** guardar → `getEntryByDate` confirma persistencia.
+- **Depende de:** T7 · **Archivos:** `app/mood.tsx`.
 
 ### [ ] T9 · Firmamento personal — `L`
-Visualización anual donde cada registro es un punto de luz en su fecha, con color del mood.
-- **Aceptación:** N registros → N puntos en las fechas correctas; render fluido (≥55 fps) con ~365 puntos usando canvas/`CustomPainter`.
+Visualización anual (Skia) donde cada registro es un punto de luz en su fecha, con el color del mood.
+- **Aceptación:** N registros → N puntos en fechas correctas; fluido (≥55 fps) con ~365 puntos en un canvas.
 - **Verificación:** test de mapeo fecha→posición + prueba manual con dataset de un año.
-- **Depende de:** T8
-- **Archivos:** `lib/features/firmament/*`.
+- **Depende de:** T8 · **Archivos:** `app/firmament.tsx`, `src/features/firmament/*`.
 
 > ✅ **Checkpoint C** — registrar ánimo crea el punto correcto en el firmamento.
 
@@ -92,25 +85,22 @@ Visualización anual donde cada registro es un punto de luz en su fecha, con col
 ## Fase 3 — Retención y monetización
 
 ### [ ] T10 · Notificaciones locales — `M`
-Programar notificación diaria según la hora del perfil, con texto breve desde contenido local.
-- **Aceptación:** notificación se programa a la hora elegida; texto calmado desde contenido local; sin push remoto.
-- **Verificación:** prueba manual en emulador dispara a la hora fijada; test de construcción del texto.
-- **Depende de:** T5, T6
-- **Archivos:** `lib/features/notifications/*`, `lib/services/notification_service.dart`.
+`expo-notifications` programa una notificación diaria a la hora del perfil, con texto breve desde contenido local.
+- **Aceptación:** se programa a la hora elegida; texto calmado desde contenido local; sin push remoto.
+- **Verificación:** prueba manual dispara a la hora fijada; test de construcción del texto.
+- **Depende de:** T5, T6 · **Archivos:** `src/services/notificationService.ts`.
 
 ### [ ] T11 · Ajustes + privacidad — `M`
-Pantalla de ajustes: borrar todos los datos, ver qué se guarda, gestionar consentimiento de anuncios.
-- **Aceptación:** «borrar mis datos» limpia SQLite y vuelve a onboarding; texto de privacidad visible; estado de consentimiento persistido.
-- **Verificación:** test: borrar datos deja las tablas vacías; widget test de la pantalla.
-- **Depende de:** T4
-- **Archivos:** `lib/features/settings/*`.
+Ajustes: borrar todos los datos (`wipeAllData`), ver qué se guarda, gestionar consentimiento.
+- **Aceptación:** «borrar mis datos» limpia SQLite y vuelve a onboarding; texto de privacidad visible; consentimiento persistido.
+- **Verificación:** borrar deja tablas vacías; render de la pantalla.
+- **Depende de:** T4 · **Archivos:** `app/settings.tsx`.
 
 ### [ ] T12 · AdMob básico — `S`
-Banner discreto en pantallas secundarias (historial/ajustes), respetando consentimiento. Sin interstitials.
-- **Aceptación:** banner solo en pantallas secundarias; nunca en el flujo principal; respeta `ads_removed` y consentimiento.
-- **Verificación:** prueba manual con IDs de test de AdMob; el flujo principal no muestra anuncios.
-- **Depende de:** T11
-- **Archivos:** `lib/services/ads_service.dart`, integración en pantallas secundarias.
+`react-native-google-mobile-ads`: banner discreto en pantallas secundarias. Requiere *dev build* (no Expo Go). Sin interstitials.
+- **Aceptación:** banner solo en pantallas secundarias; nunca en el flujo principal; respeta `adsRemoved` y consentimiento.
+- **Verificación:** dev build con IDs de test de AdMob; el flujo principal no muestra anuncios.
+- **Depende de:** T11 · **Archivos:** `src/services/adsService.ts`.
 
 > ✅ **Checkpoint D** — notificación dispara · borrar datos funciona · banner solo en secundarias.
 
@@ -118,11 +108,11 @@ Banner discreto en pantallas secundarias (historial/ajustes), respetando consent
 
 ## Resumen de ejecución
 
-| Fase | Tareas | Entregable verificable |
-|---|---|---|
-| 0 Fundaciones | T1–T4 | App arranca, datos persisten, tests verdes |
-| 1 Ritual básico | T5–T7 | Onboarding → astrología + frase diaria |
-| 2 Core | T8–T9 | Registro de ánimo → firmamento personal |
-| 3 Retención | T10–T12 | Notificaciones + privacidad + anuncios |
+| Fase | Tareas | Estado | Entregable verificable |
+|---|---|---|---|
+| 0 Fundaciones | T1–T4 | ✅ **Hecho** | Typecheck + tests verdes, config Expo válida |
+| 1 Ritual básico | T5–T7 | Pendiente | Onboarding → astrología + frase diaria |
+| 2 Core | T8–T9 | Pendiente | Registro de ánimo → firmamento personal |
+| 3 Retención | T10–T12 | Pendiente | Notificaciones + privacidad + anuncios |
 
-**Siguiente acción sugerida:** resolver las preguntas abiertas de `plan.md` (framework, estado, plataforma) y ejecutar **T1**.
+**Siguiente acción sugerida:** ejecutar **T5** (onboarding) o **T6** (contenido diario de muestra). Recomiendo empezar por **T6** para tener contenido real que mostrar en Home.

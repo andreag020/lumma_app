@@ -7,15 +7,16 @@
 > Fuentes: [`concepto-de-marca.md`](./concepto-de-marca.md) y
 > [`consideraciones-tecnicas-y-herramientas-lumma.md`](./consideraciones-tecnicas-y-herramientas-lumma.md).
 
-## Supuestos declarados
+## Decisiones de stack (resueltas)
 
-Antes de escribir la spec, estos supuestos se hacen explícitos (cámbialos si no aplican):
+1. **Framework: Expo (React Native + TypeScript).** El doc técnico admite «Flutter o React Native/Expo». Se elige Expo porque una persona sin experiencia móvil puede **previsualizar la app real en su teléfono con Expo Go (escaneando un QR)**, sin instalar toolchain nativo; además el código TS se puede verificar en cualquier entorno con Node. Trade-off aceptado: las animaciones del firmamento se resuelven con Skia/Reanimated en lugar del canvas de Flutter.
+2. **Navegación: expo-router** (rutas por archivos). **Estado: Zustand** (mínimo).
+3. **Sin cuenta ni backend en el MVP.** Local-first: `expo-sqlite` + `expo-secure-store` para datos sensibles. Render/Resend/Paddle/Clerk quedan fuera del MVP.
+4. **Contenido astrológico y frases empaquetados** como assets (JSON, 30–60 días), generados por lotes con Claude Haiku 4.5 fuera de la app. Sin llamadas a la API en runtime.
+5. **Plataforma inicial: Android** (AdMob + compra in-app nativa). iOS con la misma base después.
+6. **Idioma inicial: español.** Estructura preparada para i18n.
 
-1. **Framework: Flutter.** El doc técnico admite «Flutter o React Native/Expo». Se elige Flutter por sus animaciones/partículas (clave para el *firmamento personal*) y una sola base Android/iOS. *Decisión revisable.*
-2. **Sin cuenta ni backend en el MVP.** Arquitectura local-first: SQLite + preferencias locales. Render/Resend/Paddle/Clerk quedan fuera del MVP.
-3. **Contenido astrológico y frases empaquetados** dentro de la app para 30–60 días (JSON de assets), generados por lotes con Claude Haiku 4.5 fuera de la app. Sin llamadas a la API en tiempo de ejecución.
-4. **Plataforma objetivo inicial: Android** (AdMob + compra in-app nativa). iOS se habilita después con la misma base.
-5. **Idioma inicial: español.** Estructura preparada para i18n.
+> Nota sobre anuncios: `react-native-google-mobile-ads` requiere un *dev build* (EAS) — no funciona dentro de Expo Go. Solo aplica en la fase de monetización (Fase 3).
 
 ---
 
@@ -33,7 +34,7 @@ Antes de escribir la spec, estos supuestos se hacen explícitos (cámbialos si n
 - Firmamento personal renderiza fluido (≥ 55 fps) con un año de registros (~365 puntos).
 - Cero servicios externos obligatorios en runtime (todo funciona offline salvo anuncios).
 
-**Alcance del MVP (Fase 1):** onboarding local · perfil sin cuenta · registro de ánimo · frase diaria · astrología por signo · firmamento personal anual · notificaciones locales · AdMob básico.
+**Alcance del MVP:** onboarding local · perfil sin cuenta · registro de ánimo · frase diaria · astrología por signo · firmamento personal anual · notificaciones locales · AdMob básico.
 
 **Fuera de alcance (fases posteriores):** contenido remoto, compra para quitar anuncios, analytics, backend en Render, cuenta opcional, sincronización entre dispositivos.
 
@@ -41,28 +42,23 @@ Antes de escribir la spec, estos supuestos se hacen explícitos (cámbialos si n
 
 ## 2. Comandos
 
-> Comandos de referencia para un proyecto Flutter. Se materializan al ejecutar la tarea de andamiaje (`flutter create`).
-
 ```bash
 # Configuración inicial
-flutter pub get                 # Instalar dependencias
+npm install --legacy-peer-deps   # Instalar dependencias (peer deps de Expo)
 
 # Desarrollo
-flutter run                     # Ejecutar en dispositivo/emulador conectado
-flutter run -d chrome           # Vista rápida en web (solo UI, no plugins nativos)
+npx expo start                   # Servidor de desarrollo (QR para Expo Go)
+npx expo start --android         # Abrir en emulador/dispositivo Android
 
 # Calidad
-flutter analyze                 # Linter estático (analysis_options.yaml)
-dart format .                   # Formateo de código
+npm run typecheck                # tsc --noEmit
+npx expo config --type public    # Validar app.json + plugins
 
 # Pruebas
-flutter test                    # Tests unitarios y de widgets
-flutter test --coverage         # Con reporte de cobertura (coverage/lcov.info)
-flutter test integration_test   # Tests de integración end-to-end
+npm test                         # Jest (lógica pura: modelos, servicios)
 
-# Build
-flutter build apk --release     # APK Android release
-flutter build appbundle         # Bundle para Play Store
+# Build (fase de release, requiere cuenta EAS)
+npx eas build -p android         # Dev build / APK con módulos nativos (AdMob)
 ```
 
 ---
@@ -79,104 +75,75 @@ lumma_app/
 │   ├── plan.md                      # Plan de implementación (skill planning)
 │   └── todo.md                      # Checklist de tareas
 ├── .claude/settings.json            # Marketplace + plugin agent-skills
-├── pubspec.yaml                     # Dependencias Flutter
-├── analysis_options.yaml            # Reglas del linter
-├── assets/
+├── app.json                         # Config de Expo (nombre, scheme, plugins)
+├── package.json                     # Dependencias y scripts
+├── tsconfig.json                    # TypeScript (strict)
+├── jest.config.js                   # Jest (ts-jest, entorno node)
+├── assets/                          # Iconos, splash y contenido empaquetado
 │   └── content/                     # JSON de astrología y frases (30–60 días)
-├── lib/
-│   ├── main.dart                    # Entry point + tema + rutas
-│   ├── app.dart                     # MaterialApp / router raíz
+├── app/                             # Rutas (expo-router, file-based)
+│   ├── _layout.tsx                  # Layout raíz: tema + init de la base local
+│   ├── index.tsx                    # Home (o redirección a onboarding)
+│   ├── onboarding.tsx               # Selección de signo, hora, idioma, módulos
+│   ├── mood.tsx                     # Registro de ánimo
+│   ├── firmament.tsx                # Firmamento personal
+│   └── settings.tsx                 # Ajustes, borrar datos, consentimiento
+├── src/
 │   ├── core/
-│   │   ├── theme/                   # Colores noche, tipografía, tokens de luz
-│   │   ├── db/                      # SQLite: apertura, migraciones, DAOs
-│   │   └── utils/
+│   │   ├── theme/theme.ts           # Colores noche, tipografía, tokens de luz
+│   │   └── db/database.ts           # SQLite: apertura, migraciones, wipe
 │   ├── models/                      # Profile, DailyEntry, DailyContent, AdsConfig
 │   ├── repositories/                # Acceso a datos (perfil, registros, contenido)
-│   ├── features/
-│   │   ├── onboarding/              # Selección de signo, hora, idioma, módulos
-│   │   ├── home/                    # Astrología + frase + acceso a registro
-│   │   ├── mood/                    # Registro de ánimo (color, etiqueta, nota)
-│   │   ├── firmament/               # Firmamento personal (visualización anual)
-│   │   ├── settings/               # Ajustes, borrar datos, consentimiento ads
-│   │   └── notifications/           # Programación de notificaciones locales
-│   └── services/
-│       ├── content_service.dart     # Carga contenido diario por signo/fecha
-│       ├── notification_service.dart
-│       └── ads_service.dart         # Integración AdMob
-└── test/                            # Espejo de lib/ para unit y widget tests
+│   ├── stores/                      # Zustand (perfil, sesión de UI)
+│   └── services/                    # content, notifications, ads
+└── test/                            # Pruebas (espejo de src/)
 ```
 
 ---
 
 ## 4. Estilo de código
 
-Convenciones Dart/Flutter estándar (`dart format`, lints de `flutter_lints`).
+Convenciones TypeScript/React Native estándar.
 
-- **Nombres:** clases `PascalCase`; variables/funciones `camelCase`; archivos `snake_case.dart`; constantes `lowerCamelCase`.
-- **Modelos inmutables** con `copyWith`, `fromMap`/`toMap` para SQLite.
-- **Estado:** un solo enfoque en toda la app (Riverpod recomendado; alternativa: Provider). Sin lógica de negocio dentro de widgets.
-- **Widgets pequeños y componibles**; extraer sub-widgets antes que métodos `_buildX` largos.
-- **Sin strings hardcodeados** de UI: centralizar en un archivo de textos preparado para i18n.
+- **Nombres:** componentes y tipos `PascalCase`; variables/funciones `camelCase`; archivos de módulo `camelCase.ts`; componentes de ruta según expo-router.
+- **Tipos explícitos** en fronteras públicas (props, retornos de repos/servicios). `strict` activado en `tsconfig`.
+- **Modelos puros y serializables:** cada modelo tiene tipo de dominio (camelCase), tipo de fila SQLite (snake_case) y funciones `xToRow` / `xFromRow`. No importan módulos nativos → testeables en Node.
+- **Estado:** Zustand para estado global; sin lógica de datos dentro de componentes (va en `repositories/` y `services/`).
+- **Componentes pequeños y componibles**; extraer sub-componentes antes que funciones de render largas.
+- **Sin strings de UI hardcodeados dispersos:** centralizar textos preparados para i18n.
 
-Ejemplo de modelo (patrón a seguir):
+Ejemplo del patrón de modelo (real, en `src/models/dailyEntry.ts`):
 
-```dart
-class DailyEntry {
-  final String entryId;
-  final DateTime date;
-  final String moodColor;      // hex, p. ej. "#C9A227"
-  final String moodLabel;
-  final String? note;
-  final String? dailyPhraseId;
-  final String? astrologyMessageId;
-
-  const DailyEntry({
-    required this.entryId,
-    required this.date,
-    required this.moodColor,
-    required this.moodLabel,
-    this.note,
-    this.dailyPhraseId,
-    this.astrologyMessageId,
-  });
-
-  Map<String, Object?> toMap() => {
-        'entry_id': entryId,
-        'date': date.toIso8601String(),
-        'mood_color': moodColor,
-        'mood_label': moodLabel,
-        'note_optional': note,
-        'daily_phrase_id': dailyPhraseId,
-        'astrology_message_id': astrologyMessageId,
-      };
-
-  factory DailyEntry.fromMap(Map<String, Object?> m) => DailyEntry(
-        entryId: m['entry_id'] as String,
-        date: DateTime.parse(m['date'] as String),
-        moodColor: m['mood_color'] as String,
-        moodLabel: m['mood_label'] as String,
-        note: m['note_optional'] as String?,
-        dailyPhraseId: m['daily_phrase_id'] as String?,
-        astrologyMessageId: m['astrology_message_id'] as String?,
-      );
+```ts
+export interface DailyEntry {
+  entryId: string;
+  date: string;          // "YYYY-MM-DD" (un registro por día)
+  moodColor: string;     // hex, p. ej. "#E5C46B"
+  moodLabel: string;
+  note: string | null;
+  dailyPhraseId: string | null;
+  astrologyMessageId: string | null;
 }
+
+export function dailyEntryToRow(e: DailyEntry): DailyEntryRow { /* … */ }
+export function dailyEntryFromRow(r: DailyEntryRow): DailyEntry { /* … */ }
 ```
 
-**Dirección visual (de la marca):** fondo azul noche/índigo/ciruela profunda; acentos de luz en dorado suave, marfil, verde-lima tenue o lavanda; constelaciones en líneas finas; brillos difusos y gradientes atmosféricos en lugar de efectos agresivos. Nunca interstitials en el flujo principal.
+**Dirección visual (de la marca):** fondo azul noche/índigo/ciruela profunda; acentos de luz en dorado suave, marfil, verde-lima tenue o lavanda; constelaciones en líneas finas; brillos difusos y gradientes atmosféricos en lugar de efectos agresivos. Nunca interstitials en el flujo principal. Tokens en `src/core/theme/theme.ts`.
 
 ---
 
 ## 5. Estrategia de pruebas
 
-- **Framework:** `flutter_test` (unit + widget) e `integration_test` (E2E).
-- **Ubicación:** `test/` refleja la estructura de `lib/`; los E2E en `integration_test/`.
-- **Cobertura objetivo del MVP:** ≥ 70 % en `models/`, `repositories/` y `services/` (lógica pura y de datos). UI cubierta por widget tests de las pantallas clave.
+- **Framework:** Jest. Lógica pura (modelos, servicios, mapeos) con **ts-jest** en entorno Node. Pruebas de componentes adoptarán **jest-expo** cuando existan pantallas.
+- **Ubicación:** `test/` refleja la estructura de `src/`.
+- **Cobertura objetivo del MVP:** ≥ 70 % en `models/`, `repositories/` y `services/` (lógica pura y de datos).
 - **Prioridades de prueba:**
-  1. DAOs de SQLite: escribir/leer perfil y registros diarios; migraciones.
+  1. Round-trip de modelos (dominio ↔ fila SQLite). ✅ *implementado en Checkpoint A.*
   2. `content_service`: seleccionar contenido correcto por signo + fecha.
   3. Registro de ánimo: guardar un registro se refleja en el firmamento.
-  4. Firmamento: N registros → N puntos de luz en las fechas correctas.
-- **Verificación manual:** ejecutar el flujo onboarding → home → registro → firmamento en emulador antes de cada checkpoint.
+  4. Firmamento: N registros → N puntos en las fechas correctas.
+- **Verificación manual:** `npx expo start` → Expo Go en el teléfono; recorrer onboarding → home → registro → firmamento antes de cada checkpoint.
 
 ---
 
@@ -184,7 +151,7 @@ class DailyEntry {
 
 **Siempre (Always):**
 
-- Mantener todo local-first: los datos de la usuaria viven en el dispositivo (SQLite + secure storage para fecha de nacimiento si se pide).
+- Mantener todo local-first: los datos de la usuaria viven en el dispositivo (`expo-sqlite` + `expo-secure-store` para fecha de nacimiento si se pide).
 - Ofrecer «borrar mis datos» desde ajustes y explicar en onboarding qué se guarda.
 - Reutilizar contenido por día+signo (no generar por usuaria en runtime).
 - Preferir selección manual de signo sobre pedir fecha de nacimiento completa.
@@ -195,7 +162,7 @@ class DailyEntry {
 - Introducir cualquier dependencia de red obligatoria (backend, API en runtime).
 - Pedir fecha de nacimiento completa u otros datos sensibles.
 - Añadir un nuevo servicio externo (Render, Resend, Paddle, Clerk) o cuentas de usuario.
-- Cambiar el framework (Flutter → RN/Expo) o el motor de estado.
+- Cambiar el framework o el motor de estado.
 - Introducir compras in-app o cambiar el modelo de monetización.
 
 **Nunca (Never):**

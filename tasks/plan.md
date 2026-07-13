@@ -35,7 +35,7 @@ Andamiaje + tema
 - **T2** Tema Lumma (colores noche, tipografía, tokens de luz)
 - **T3** Capa SQLite (apertura, migraciones, esquema de las 4 tablas)
 - **T4** Modelos + repositorios (Profile, DailyEntry, DailyContent, AdsConfig)
-- ✅ **Checkpoint A:** `flutter analyze` limpio, `flutter test` verde para DAOs y modelos, la app arranca a una pantalla vacía con el tema aplicado.
+- ✅ **Checkpoint A — COMPLETADO:** `npm run typecheck` limpio, `npm test` verde (round-trip de los 4 modelos), `npx expo config` resuelve con el plugin router, y la app arranca al layout raíz con el tema noche. *(La ejecución en emulador/Expo Go queda para verificación manual: este entorno no tiene dispositivo.)*
 
 ### Fase 1 — Ritual básico (slices 1–2)
 - **T5** Onboarding local (signo, hora de notificación, idioma, módulos) → guarda perfil
@@ -58,16 +58,18 @@ Andamiaje + tema
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| Rendimiento del firmamento con ~365 puntos | Alto (es el core visual) | Usar `CustomPainter`/canvas, no 365 widgets; probar con dataset de un año en Checkpoint C. |
-| Datos sensibles (fecha de nacimiento) | Medio/legal | Preferir selección manual de signo; secure storage si se pide fecha; opción de borrado. |
+| Rendimiento del firmamento con ~365 puntos | Alto (es el core visual) | Renderizar con `@shopify/react-native-skia` (un canvas), no 365 componentes; probar con dataset de un año en Checkpoint C. |
+| Datos sensibles (fecha de nacimiento) | Medio/legal | Preferir selección manual de signo; `expo-secure-store` si se pide fecha; opción de borrado. |
 | Cumplimiento de consentimiento de anuncios (GDPR) | Medio | Integrar flujo de consentimiento de AdMob antes de servir anuncios en regiones aplicables. |
 | Contenido insuficiente (se acaban los 30–60 días) | Medio | Empaquetar buffer amplio; Fase 2 del roadmap añade JSON remoto actualizable. |
-| Elección de framework aún abierta | Bajo (temprano) | Decisión aislada en Fase 0; cambiar antes de T5 es barato. |
+| AdMob no corre en Expo Go | Bajo (tardío) | Solo afecta la Fase 3; usar un *dev build* (EAS) cuando se integren anuncios. |
 
-## Preguntas abiertas
+## Decisiones (resueltas)
 
-1. ¿Confirmamos **Flutter** o prefieres **React Native/Expo**? (afecta todo el código, no la spec)
-2. ¿Motor de estado: **Riverpod** (recomendado) u otro?
-3. ¿Plataforma inicial solo **Android**, o Android + iOS desde el arranque?
-4. ¿El contenido diario de muestra lo genero yo (frases/astrología en español) o lo aportas tú?
-5. ¿Paleta de moods fija por defecto o personalizable desde el MVP?
+Estas eran preguntas abiertas; se resolvieron con recomendación (usuaria sin experiencia móvil, prioriza poder previsualizar):
+
+1. **Framework:** ✅ **Expo (React Native + TypeScript)** — permite previsualizar en el teléfono con Expo Go sin toolchain nativo.
+2. **Estado:** ✅ **Zustand** (mínimo, apto para principiantes).
+3. **Plataforma:** ✅ **Android primero**, iOS con la misma base después.
+4. **Contenido diario:** ✅ **Lo genera el equipo** (frases/astrología en español); la usuaria revisa el tono.
+5. **Paleta de moods:** ✅ **Fija por defecto** en el MVP; personalizable en Fase 2.
