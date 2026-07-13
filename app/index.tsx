@@ -11,6 +11,7 @@ import { Redirect, Link } from 'expo-router';
 import { useProfileStore } from '../src/stores/profileStore';
 import { useEntryStore } from '../src/stores/entryStore';
 import { getDailyContent } from '../src/services/contentService';
+import { scheduleDailyReminder } from '../src/services/notificationService';
 import { todayISODate } from '../src/core/utils/date';
 import { ZODIAC_LABELS, type DailyContent } from '../src/models';
 import { colors, spacing, radius, typography } from '../src/core/theme/theme';
@@ -46,6 +47,14 @@ export default function Index() {
       cancelled = true;
     };
   }, [profile]);
+
+  // Local únicamente, sin bloquear la carga de Home si el permiso falla.
+  useEffect(() => {
+    if (!profile) return;
+    scheduleDailyReminder(profile).catch((err) => {
+      console.warn('No se pudo programar el recordatorio diario', err);
+    });
+  }, [profile?.notificationTime]);
 
   if (!loaded) {
     return (
