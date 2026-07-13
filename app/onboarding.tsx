@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   View,
   Text,
-  Pressable,
   TextInput,
   ScrollView,
   KeyboardAvoidingView,
@@ -13,7 +12,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useProfileStore } from '../src/stores/profileStore';
 import { generateLocalId } from '../src/core/utils/id';
-import { ZODIAC_SIGNS, ZODIAC_LABELS, type ZodiacSign } from '../src/models';
+import { AmbientSky } from '../src/components/AmbientSky';
+import { AnimatedPressable } from '../src/components/AnimatedPressable';
+import {
+  ZODIAC_SIGNS,
+  ZODIAC_LABELS,
+  ZODIAC_SYMBOLS,
+  type ZodiacSign,
+} from '../src/models';
 import { colors, spacing, radius, typography } from '../src/core/theme/theme';
 
 // Horas preseleccionadas en vez de un time-picker nativo: evita sumar una
@@ -52,106 +58,121 @@ export default function Onboarding() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
+    <View style={styles.root}>
+      <AmbientSky density={10} />
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <Text style={styles.eyebrow}>Bienvenida a Lumma</Text>
-          <Text style={styles.title}>Tu ritual nocturno empieza aquí</Text>
-          <Text style={styles.lede}>
-            Solo dos cosas antes de tu primer firmamento: tu signo y a qué
-            hora quieres tu recordatorio.
-          </Text>
-
-          <Text style={styles.sectionLabel}>¿Cuál es tu signo?</Text>
-          <View style={styles.grid}>
-            {ZODIAC_SIGNS.map((s) => {
-              const selected = s === sign;
-              return (
-                <Pressable
-                  key={s}
-                  onPress={() => setSign(s)}
-                  style={[styles.chip, selected && styles.chipSelected]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      selected && styles.chipTextSelected,
-                    ]}
-                  >
-                    {ZODIAC_LABELS[s]}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <Text style={styles.sectionLabel}>
-            ¿Cuándo quieres tu recordatorio?
-          </Text>
-          <View style={styles.row}>
-            {NOTIFICATION_TIMES.map((t) => {
-              const selected = t === time;
-              return (
-                <Pressable
-                  key={t}
-                  onPress={() => setTime(t)}
-                  style={[styles.chip, selected && styles.chipSelected]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      selected && styles.chipTextSelected,
-                    ]}
-                  >
-                    {t}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <Text style={styles.sectionLabel}>
-            ¿Cómo te llamamos? <Text style={styles.optional}>(opcional)</Text>
-          </Text>
-          <TextInput
-            value={nickname}
-            onChangeText={setNickname}
-            placeholder="Tu nombre"
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-            maxLength={40}
-          />
-
-          <Text style={styles.privacy}>
-            Esto se guarda solo en tu teléfono. Puedes borrarlo cuando
-            quieras desde Ajustes.
-          </Text>
-
-          <Pressable
-            onPress={handleContinue}
-            disabled={!canContinue}
-            style={[styles.cta, !canContinue && styles.ctaDisabled]}
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.ctaText}>
-              {saving ? 'Guardando…' : 'Comenzar mi ritual'}
+            <Text style={styles.eyebrow}>Bienvenida a Lumma</Text>
+            <Text style={styles.title}>Tu ritual nocturno empieza aquí</Text>
+            <Text style={styles.lede}>
+              Solo dos cosas antes de tu primer firmamento: tu signo y a qué
+              hora quieres tu recordatorio.
             </Text>
-          </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+            <Text style={styles.sectionLabel}>¿Cuál es tu signo?</Text>
+            <View style={styles.grid}>
+              {ZODIAC_SIGNS.map((s) => {
+                const selected = s === sign;
+                return (
+                  <AnimatedPressable
+                    key={s}
+                    onPress={() => setSign(s)}
+                    style={[styles.signChip, selected && styles.signChipSelected]}
+                  >
+                    <Text
+                      style={[
+                        styles.signGlyph,
+                        selected && styles.signGlyphSelected,
+                      ]}
+                    >
+                      {ZODIAC_SYMBOLS[s]}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.signChipText,
+                        selected && styles.signChipTextSelected,
+                      ]}
+                    >
+                      {ZODIAC_LABELS[s]}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </View>
+
+            <Text style={styles.sectionLabel}>
+              ¿Cuándo quieres tu recordatorio?
+            </Text>
+            <View style={styles.row}>
+              {NOTIFICATION_TIMES.map((t) => {
+                const selected = t === time;
+                return (
+                  <AnimatedPressable
+                    key={t}
+                    onPress={() => setTime(t)}
+                    style={[styles.chip, selected && styles.chipSelected]}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        selected && styles.chipTextSelected,
+                      ]}
+                    >
+                      {t}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </View>
+
+            <Text style={styles.sectionLabel}>
+              ¿Cómo te llamamos?{' '}
+              <Text style={styles.optional}>(opcional)</Text>
+            </Text>
+            <TextInput
+              value={nickname}
+              onChangeText={setNickname}
+              placeholder="Tu nombre"
+              placeholderTextColor={colors.textMuted}
+              style={styles.input}
+              maxLength={40}
+            />
+
+            <Text style={styles.privacy}>
+              Esto se guarda solo en tu teléfono. Puedes borrarlo cuando
+              quieras desde Ajustes.
+            </Text>
+
+            <AnimatedPressable
+              onPress={handleContinue}
+              disabled={!canContinue}
+              style={[styles.cta, !canContinue && styles.ctaDisabled]}
+            >
+              <Text style={styles.ctaText}>
+                {saving ? 'Guardando…' : 'Comenzar mi ritual'}
+              </Text>
+            </AnimatedPressable>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  container: {
+    flex: 1,
   },
   scroll: {
     padding: spacing.lg,
@@ -193,6 +214,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+  },
+  signChip: {
+    width: 76,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+  },
+  signChipSelected: {
+    borderColor: colors.gold,
+    backgroundColor: colors.surfaceMuted,
+  },
+  signGlyph: {
+    fontSize: 22,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  signGlyphSelected: {
+    color: colors.gold,
+  },
+  signChipText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  signChipTextSelected: {
+    color: colors.ivory,
+    fontWeight: '600',
   },
   chip: {
     paddingVertical: spacing.sm,

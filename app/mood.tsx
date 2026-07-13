@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  Pressable,
   TextInput,
   ScrollView,
   KeyboardAvoidingView,
@@ -16,6 +15,8 @@ import { useProfileStore } from '../src/stores/profileStore';
 import { getDailyContent } from '../src/services/contentService';
 import { todayISODate } from '../src/core/utils/date';
 import { generateLocalId } from '../src/core/utils/id';
+import { AmbientSky } from '../src/components/AmbientSky';
+import { AnimatedPressable } from '../src/components/AnimatedPressable';
 import { MOOD_PALETTE } from '../src/models';
 import { colors, spacing, radius, typography } from '../src/core/theme/theme';
 
@@ -78,88 +79,94 @@ export default function Mood() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
+    <View style={styles.root}>
+      <AmbientSky density={10} />
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <Text style={styles.eyebrow}>
-            {isEditing ? 'Edita tu día' : 'Tu día de hoy'}
-          </Text>
-          <Text style={styles.title}>¿Cómo te sientes?</Text>
-          <Text style={styles.lede}>
-            Elige un color. Se sumará a tu firmamento personal.
-          </Text>
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.eyebrow}>
+              {isEditing ? 'Edita tu día' : 'Tu día de hoy'}
+            </Text>
+            <Text style={styles.title}>¿Cómo te sientes?</Text>
+            <Text style={styles.lede}>
+              Elige un color. Se sumará a tu firmamento personal.
+            </Text>
 
-          {!loaded ? null : (
-            <>
-              <View style={styles.grid}>
-                {MOOD_PALETTE.map((option) => {
-                  const selected = option.color === selectedColor;
-                  return (
-                    <Pressable
-                      key={option.color}
-                      onPress={() => setSelectedColor(option.color)}
-                      style={styles.moodItem}
-                    >
-                      <View
-                        style={[
-                          styles.swatch,
-                          { backgroundColor: option.color },
-                          selected && styles.swatchSelected,
-                        ]}
-                      />
-                      <Text
-                        style={[
-                          styles.moodLabel,
-                          selected && styles.moodLabelSelected,
-                        ]}
+            {!loaded ? null : (
+              <>
+                <View style={styles.grid}>
+                  {MOOD_PALETTE.map((option) => {
+                    const selected = option.color === selectedColor;
+                    return (
+                      <AnimatedPressable
+                        key={option.color}
+                        onPress={() => setSelectedColor(option.color)}
+                        style={styles.moodItem}
                       >
-                        {option.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+                        <View
+                          style={[
+                            styles.swatch,
+                            { backgroundColor: option.color },
+                            selected && styles.swatchSelected,
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.moodLabel,
+                            selected && styles.moodLabelSelected,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </AnimatedPressable>
+                    );
+                  })}
+                </View>
 
-              <Text style={styles.sectionLabel}>
-                Una nota <Text style={styles.optional}>(opcional)</Text>
-              </Text>
-              <TextInput
-                value={note}
-                onChangeText={setNote}
-                placeholder="¿Algo que quieras recordar de hoy?"
-                placeholderTextColor={colors.textMuted}
-                style={styles.input}
-                multiline
-                maxLength={280}
-              />
-
-              <Pressable
-                onPress={handleSave}
-                disabled={!canSave}
-                style={[styles.cta, !canSave && styles.ctaDisabled]}
-              >
-                <Text style={styles.ctaText}>
-                  {saving ? 'Guardando…' : 'Guardar'}
+                <Text style={styles.sectionLabel}>
+                  Una nota <Text style={styles.optional}>(opcional)</Text>
                 </Text>
-              </Pressable>
-            </>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+                <TextInput
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="¿Algo que quieras recordar de hoy?"
+                  placeholderTextColor={colors.textMuted}
+                  style={styles.input}
+                  multiline
+                  maxLength={280}
+                />
+
+                <AnimatedPressable
+                  onPress={handleSave}
+                  disabled={!canSave}
+                  style={[styles.cta, !canSave && styles.ctaDisabled]}
+                >
+                  <Text style={styles.ctaText}>
+                    {saving ? 'Guardando…' : 'Guardar'}
+                  </Text>
+                </AnimatedPressable>
+              </>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  container: {
+    flex: 1,
   },
   scroll: {
     padding: spacing.lg,

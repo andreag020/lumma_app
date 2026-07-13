@@ -36,3 +36,19 @@ export const ZODIAC_LABELS: Record<ZodiacSign, string> = {
   acuario: 'Acuario',
   piscis: 'Piscis',
 };
+
+/** Glifo astrológico (Unicode, sin dependencias de íconos) por signo. */
+export const ZODIAC_SYMBOLS: Record<ZodiacSign, string> = {
+  aries: '♈',
+  tauro: '♉',
+  geminis: '♊',
+  cancer: '♋',
+  leo: '♌',
+  virgo: '♍',
+  libra: '♎',
+  escorpio: '♏',
+  sagitario: '♐',
+  capricornio: '♑',
+  acuario: '♒',
+  piscis: '♓',
+};
