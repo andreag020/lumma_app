@@ -62,6 +62,7 @@ Andamiaje + tema
 | Datos sensibles (fecha de nacimiento) | Medio/legal | Preferir selección manual de signo; `expo-secure-store` si se pide fecha; opción de borrado. |
 | Cumplimiento de consentimiento de anuncios (GDPR) | Medio | Integrar flujo de consentimiento de AdMob antes de servir anuncios en regiones aplicables. |
 | Contenido insuficiente (se acaban los 30–60 días) | Medio | Empaquetar buffer amplio; Fase 2 del roadmap añade JSON remoto actualizable. |
+| **Expo Go de las tiendas va detrás del SDK más nuevo** | Alto (bloquea probar en el teléfono) | Expo Go en Play Store/App Store solo soporta **una** versión de SDK a la vez, y la aprobación de cada SDK nuevo en las tiendas se retrasa semanas. El proyecto se fijó a **Expo SDK 54** (la versión vigente en las tiendas en jul-2026) en vez del SDK 57 recién publicado en npm, para que Expo Go recién descargada pueda abrir el proyecto sin necesidad de un dev build. Antes de subir de SDK en el futuro, confirmar qué versión soporta Expo Go en las tiendas. |
 | AdMob no corre en Expo Go | Bajo (tardío) | Solo afecta la Fase 3; usar un *dev build* (EAS) cuando se integren anuncios. |
 
 ## Decisiones (resueltas)
