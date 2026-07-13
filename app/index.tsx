@@ -22,6 +22,7 @@ import {
   type DailyContent,
 } from '../src/models';
 import { colors, spacing, radius, typography } from '../src/core/theme/theme';
+import { fonts } from '../src/core/theme/fonts';
 
 /** Home: astrología del día + frase, o redirección a onboarding sin perfil. */
 export default function Index() {
@@ -226,9 +227,10 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   phrase: {
-    ...typography.body,
+    fontFamily: fonts.quote,
+    fontSize: 19,
+    lineHeight: 26,
     color: colors.lavender,
-    fontStyle: 'italic',
   },
   actions: {
     marginTop: 'auto',
