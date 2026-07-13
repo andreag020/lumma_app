@@ -5,6 +5,7 @@ import {
   getContentForSign,
 } from '../repositories/contentRepository';
 import type { DailyContent, ZodiacSign } from '../models';
+import { dayOfYear } from '../core/utils/date';
 // Contenido empaquetado como asset (generado offline por lotes con Claude
 // Haiku 4.5; ver scripts/generate-content.mjs). Nunca llama a la API en runtime.
 import bundledContent from '../../assets/content/content.json';
@@ -38,12 +39,4 @@ export async function getDailyContent(
 
   const index = dayOfYear(date) % forSign.length;
   return forSign[index];
-}
-
-/** Día del año (1–366) a partir de una fecha ISO "YYYY-MM-DD". */
-export function dayOfYear(isoDate: string): number {
-  const d = new Date(`${isoDate}T00:00:00Z`);
-  const start = Date.UTC(d.getUTCFullYear(), 0, 0);
-  const diff = d.getTime() - start;
-  return Math.floor(diff / 86_400_000);
 }

@@ -59,9 +59,8 @@ npm test            # pruebas de lógica (Jest)
 ### Estado de desarrollo
 
 - ✅ **Fase 0 (Fundaciones):** proyecto Expo, tema noche, base SQLite con migraciones, modelos y repositorios, pruebas de modelos. *(Checkpoint A)*
-- ✅ **Fase 1 (Ritual básico):** contenido diario, onboarding (signo + hora de notificación), pantalla Home con astrología y frase del día. *(Checkpoint B — código listo; falta tu confirmación probándolo en Expo Go)*
-- ⏳ **Fase 2:** registro de ánimo, firmamento personal.
-- ⏳ **Fase 2:** registro de ánimo y firmamento personal.
+- ✅ **Fase 1 (Ritual básico):** contenido diario, onboarding (signo + hora de notificación), pantalla Home con astrología y frase del día. *(Checkpoint B)*
+- ✅ **Fase 2 (Core):** registro de ánimo (paleta fija de 8 colores) y firmamento personal anual (Skia). *(Checkpoint C — código y pruebas verificados; falta tu confirmación viéndolo en el teléfono)*
 - ⏳ **Fase 3:** notificaciones, ajustes/privacidad y AdMob.
 
 Ver el detalle y la siguiente tarea en [`tasks/todo.md`](./tasks/todo.md).

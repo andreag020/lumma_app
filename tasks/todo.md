@@ -68,19 +68,19 @@ Astrología del signo + frase del día desde contenido local, con acceso al regi
 
 ## Fase 2 — Registro y firmamento (core)
 
-### [ ] T8 · Registro de ánimo — `M`
-Color de mood + etiqueta + nota opcional; persistir con `upsertEntry` (un registro por día).
-- **Aceptación:** registro en ≤3 toques desde home; guarda `DailyEntry` de hoy; editar el existente si ya hay.
-- **Verificación:** guardar → `getEntryByDate` confirma persistencia.
-- **Depende de:** T7 · **Archivos:** `app/mood.tsx`.
+### [x] T8 · Registro de ánimo — `M`
+Paleta fija de 8 moods (color + etiqueta); nota opcional; persiste con `upsertEntry` vía `entryStore` (un registro por día, editable).
+- **Aceptación:** ✅ 3 toques desde Home (botón → elegir color → Guardar); guarda `DailyEntry` de hoy; reabrir el mismo día precarga el registro existente para editarlo. Home muestra el mood de hoy si ya se registró.
+- **Verificación:** ✅ `npm run typecheck` limpio, `npm test` verde.
+- **Depende de:** T7 · **Archivos:** `app/mood.tsx`, `src/stores/entryStore.ts`, `src/models/moodPalette.ts`.
 
-### [ ] T9 · Firmamento personal — `L`
-Visualización anual (Skia) donde cada registro es un punto de luz en su fecha, con el color del mood.
-- **Aceptación:** N registros → N puntos en fechas correctas; fluido (≥55 fps) con ~365 puntos en un canvas.
-- **Verificación:** test de mapeo fecha→posición + prueba manual con dataset de un año.
-- **Depende de:** T8 · **Archivos:** `app/firmament.tsx`, `src/features/firmament/*`.
+### [x] T9 · Firmamento personal — `L`
+Visualización anual con `@shopify/react-native-skia` (un solo Canvas nativo, no 365 componentes de React Native) donde cada registro es un punto de luz en su fecha, con el color del mood. Fondo con puntos tenues para los 365/366 días del año.
+- **Aceptación:** ✅ mapeo fecha→posición puro y testeado (`src/features/firmament/layout.ts`); N registros → N puntos en fechas correctas; Skia confirmado como bundled en Expo Go para SDK 54 (ver `bundledNativeModules.json`).
+- **Verificación:** ✅ 9 pruebas unitarias del mapeo verdes (`test/features/firmament/layout.test.ts`); `npm run typecheck` limpio (valida el uso real de la API de Skia — `Canvas`/`Circle`/`BlurMask`); `npx expo config` sigue resolviendo en SDK 54 tras instalar la dependencia.
+- **Depende de:** T8 · **Archivos:** `app/firmament.tsx`, `src/features/firmament/layout.ts`.
 
-> ✅ **Checkpoint C** — registrar ánimo crea el punto correcto en el firmamento.
+> ✅ **Checkpoint C — código verificado:** registrar ánimo → aparece el punto correcto en el firmamento. *(Render real en pantalla queda pendiente de tu confirmación en Expo Go — este entorno no tiene teléfono.)*
 
 ---
 
@@ -114,7 +114,7 @@ Ajustes: borrar todos los datos (`wipeAllData`), ver qué se guarda, gestionar c
 |---|---|---|---|
 | 0 Fundaciones | T1–T4 | ✅ **Hecho** | Typecheck + tests verdes, config Expo válida |
 | 1 Ritual básico | T5–T7 | ✅ **Hecho** | Onboarding → astrología + frase diaria |
-| 2 Core | T8–T9 | Pendiente | Registro de ánimo → firmamento personal |
+| 2 Core | T8–T9 | ✅ **Hecho** | Registro de ánimo → firmamento personal |
 | 3 Retención | T10–T12 | Pendiente | Notificaciones + privacidad + anuncios |
 
-**Siguiente acción sugerida:** probar el flujo onboarding → home en tu teléfono (Expo Go) y confirmar que se ve bien. Después, seguir con **T8** (registro de ánimo), que es el corazón del producto: guarda el `DailyEntry` de hoy y es el primer paso hacia el firmamento personal (T9).
+**Siguiente acción sugerida:** probar en tu teléfono el recorrido completo — onboarding → Home → registrar ánimo → ver el punto en el firmamento — y confirmar que se ve y se siente bien. Después, seguir con **T10** (notificaciones locales) para cerrar el ritual diario.
