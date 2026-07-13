@@ -42,6 +42,8 @@ npm run generate:content -- --days 30 --start 2026-07-13
 
 Requiere Node 18+ y la app **Expo Go** en tu teléfono (Android/iOS).
 
+> **Sobre la versión de Expo (SDK 54):** Expo Go de las tiendas solo soporta *una* versión de SDK a la vez, y tarda semanas en aprobar cada versión nueva. El proyecto está fijado a **Expo SDK 54**, la versión vigente en Play Store/App Store, para que Expo Go recién descargada abra el proyecto sin errores de «incompatibilidad». Si ves ese error, casi siempre significa que tu Expo Go es más nueva/vieja que el `expo` de `package.json` — iguala ambas.
+
 ```bash
 npm install --legacy-peer-deps   # instalar dependencias
 npx expo start                   # abre un QR: escanéalo con Expo Go
