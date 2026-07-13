@@ -4,19 +4,25 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getDb } from '../src/core/db/database';
+import { seedContent } from '../src/services/contentService';
 import { colors } from '../src/core/theme/theme';
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Abrir la base local y aplicar migraciones antes de mostrar la app.
-    getDb()
-      .then(() => setReady(true))
-      .catch((err) => {
-        console.error('No se pudo inicializar la base de datos', err);
+    // Abrir la base local, aplicar migraciones y sembrar el contenido
+    // empaquetado antes de mostrar la app.
+    (async () => {
+      try {
+        await getDb();
+        await seedContent();
+      } catch (err) {
+        console.error('No se pudo inicializar la app', err);
+      } finally {
         setReady(true);
-      });
+      }
+    })();
   }, []);
 
   if (!ready) {

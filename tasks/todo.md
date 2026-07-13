@@ -48,11 +48,13 @@ Flujo sin cuenta: elegir signo, hora de notificación, idioma y módulos; guarda
 - **Verificación:** store de perfil + `getProfile()` tras reinicio; recorrido en Expo Go.
 - **Depende de:** T4, T2 · **Archivos:** `app/onboarding.tsx`, `src/stores/profileStore.ts`.
 
-### [ ] T6 · Contenido diario empaquetado + service — `M`
-Assets JSON (30 días por signo) cargados a SQLite (`bulkInsertContent`) y consultados por signo+fecha.
-- **Aceptación:** `contentService` devuelve el contenido correcto dado (signo, fecha); sin red; fallback si falta la fecha.
-- **Verificación:** `npm test` con casos por signo/fecha.
-- **Depende de:** T4 · **Archivos:** `assets/content/*`, `src/services/contentService.ts`, `app.json` (assets).
+### [x] T6 · Contenido diario empaquetado + service — `M`
+Assets JSON cargados a SQLite (`bulkInsertContent`) y consultados por signo+fecha, con respaldo determinista. Generación por lotes offline con Claude Haiku 4.5.
+- **Aceptación:** ✅ `contentService.getDailyContent` devuelve contenido por (signo, fecha) con respaldo si falta la fecha; `seedContent` idempotente; sin llamadas de red en la app.
+- **Verificación:** ✅ typecheck; sembrado en arranque (`_layout`); script `generate:content` valida sintaxis y guardia de API key.
+- **Depende de:** T4 · **Archivos:** `assets/content/content.json`, `src/services/contentService.ts`, `scripts/generate-content.mjs`.
+
+> **Hosting / API key:** la app no tiene backend; la clave de Claude vive solo en el script offline (`scripts/generate-content.mjs`), nunca en el bundle. El contenido se empaqueta como asset JSON.
 
 ### [ ] T7 · Pantalla Home — `M`
 Astrología del signo + frase del día desde contenido local, con acceso al registro.

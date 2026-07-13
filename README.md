@@ -22,6 +22,22 @@
 - **Backend:** ninguno al inicio (opcional: microservicio en Render)
 - **IA:** Claude Haiku 4.5 para generación de contenido en lote (Batch API), fuera de la app
 
+## Arquitectura y hosting
+
+Lumma es **local-first**: **no hay backend ni servidor que hostear**.
+
+- **La app** corre en el teléfono de cada usuaria; se distribuye por Google Play (y luego App Store).
+- **Los datos** de la usuaria viven solo en su dispositivo (SQLite). No salen del teléfono.
+- **La API key de Claude** vive **solo** en el script de generación offline (`scripts/generate-content.mjs`), en tu máquina o en un secreto de CI — **nunca dentro de la app**. Incrustarla en el bundle permitiría extraerla del APK.
+- **El contenido** (astrología + frases) se genera **por lotes, fuera de la app**, con Claude Haiku 4.5 (Batch API), y se empaqueta como `assets/content/content.json`, que la app lee localmente. No hay llamadas a la API de Claude en tiempo de ejecución.
+
+Generar el contenido completo (requiere tu clave, se ejecuta en tu máquina):
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+npm run generate:content -- --days 30 --start 2026-07-13
+```
+
 ## Cómo ejecutar
 
 Requiere Node 18+ y la app **Expo Go** en tu teléfono (Android/iOS).
@@ -41,7 +57,7 @@ npm test            # pruebas de lógica (Jest)
 ### Estado de desarrollo
 
 - ✅ **Fase 0 (Fundaciones):** proyecto Expo, tema noche, base SQLite con migraciones, modelos y repositorios, pruebas de modelos. *(Checkpoint A)*
-- ⏳ **Fase 1:** onboarding local, contenido diario, pantalla Home.
+- 🚧 **Fase 1:** contenido diario ✅ · onboarding local ⏳ · pantalla Home ⏳.
 - ⏳ **Fase 2:** registro de ánimo y firmamento personal.
 - ⏳ **Fase 3:** notificaciones, ajustes/privacidad y AdMob.
 

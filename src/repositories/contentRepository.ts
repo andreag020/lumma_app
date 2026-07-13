@@ -42,3 +42,25 @@ export async function getContent(
   );
   return row ? dailyContentFromRow(row) : null;
 }
+
+/** Todo el contenido de un signo (ordenado por fecha). Sirve de respaldo
+ * cuando no hay una coincidencia exacta de fecha. */
+export async function getContentForSign(
+  sign: ZodiacSign
+): Promise<DailyContent[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<DailyContentRow>(
+    'SELECT * FROM daily_content WHERE zodiac_sign = ? ORDER BY date ASC',
+    [sign]
+  );
+  return rows.map(dailyContentFromRow);
+}
+
+/** Número de filas de contenido cargadas (para decidir si sembrar). */
+export async function countContent(): Promise<number> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<{ n: number }>(
+    'SELECT COUNT(*) AS n FROM daily_content'
+  );
+  return row?.n ?? 0;
+}
