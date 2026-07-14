@@ -25,13 +25,16 @@ import { colors, spacing, radius, typography } from '../src/core/theme/theme';
 // Horas preseleccionadas en vez de un time-picker nativo: evita sumar una
 // dependencia nativa nueva justo tras resolver un problema de compatibilidad
 // de SDK, y alcanza para el MVP (ver tasks/plan.md "Boundaries").
-const NOTIFICATION_TIMES = ['07:00', '12:00', '18:00', '21:00', '22:00'];
+// Repartidas a lo largo del día (no solo de noche): muchas personas leen
+// su lectura diaria al empezar el día, al estilo del horóscopo de
+// periódico — no asumimos que todas prefieren un ritual nocturno.
+const NOTIFICATION_TIMES = ['07:00', '08:00', '12:00', '18:00', '21:00'];
 const DEFAULT_MODULES = ['astrology', 'mood', 'firmament'];
 
 export default function Onboarding() {
   const save = useProfileStore((s) => s.save);
   const [sign, setSign] = useState<ZodiacSign | null>(null);
-  const [time, setTime] = useState('21:00');
+  const [time, setTime] = useState('08:00');
   const [nickname, setNickname] = useState('');
   const [saving, setSaving] = useState(false);
 

@@ -24,3 +24,10 @@ export function yearOf(isoDate: string): number {
 export function isLeapYear(year: number): boolean {
   return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
+
+/** Suma (o resta, con `days` negativo) días a una fecha ISO "YYYY-MM-DD". */
+export function addDays(isoDate: string, days: number): string {
+  const d = new Date(`${isoDate}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}

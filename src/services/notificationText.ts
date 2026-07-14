@@ -3,24 +3,16 @@
  * importado aquí, así que es testeable sin runtime nativo (a diferencia de
  * notificationService.ts, que sí lo necesita).
  *
- * Este recordatorio invita a leer la frase/guía del día — NO a registrar
- * el ánimo. Un recordatorio de ánimo aparte, configurable desde Ajustes,
- * es una función futura (ver tasks/todo.md T11) y no debe compartir estos
- * mensajes ni este canal.
+ * Estilo "horóscopo de periódico": cada notificación es la lectura real
+ * del signo para ESE día (no un texto genérico) — por eso se programa una
+ * notificación por fecha en vez de una sola repetitiva. Ver
+ * notificationService.ts para la ventana móvil de días programados.
+ *
+ * Este recordatorio es sobre la frase diaria, no sobre el ánimo — un
+ * recordatorio de ánimo aparte, configurable desde Ajustes, es una
+ * función futura (ver tasks/todo.md T11) y no debe compartir este canal.
  */
-
-// Mensajes genéricos y calmados: una notificación programada no puede
-// "saber" qué frase de astrología corresponderá a una fecha futura sin un
-// backend, así que usamos invitaciones atemporales a leer la frase del
-// día — coherente con la arquitectura local-first
-// (consideraciones-tecnicas...md → Notificaciones).
-export const PHRASE_REMINDER_MESSAGES = [
-  'Tu frase de hoy ya está en el cielo, esperándote.',
-  'Un momento para leer tu guía de esta noche.',
-  'Lumma tiene una frase para ti esta noche.',
-  'Tu cielo trae un mensaje para hoy.',
-  'Una pausa, una frase, un poco de calma.',
-];
+import { ZODIAC_LABELS, type ZodiacSign, type DailyContent } from '../models';
 
 /** "HH:mm" → [hour, minute]. */
 export function parseTime(time: string): [number, number] {
@@ -28,12 +20,17 @@ export function parseTime(time: string): [number, number] {
   return [hour, minute];
 }
 
-/** Elige un mensaje de forma determinista a partir de un texto semilla,
- * para que no cambie en cada reprogramación del mismo horario. */
-export function pickPhraseReminderMessage(seed: string): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  return PHRASE_REMINDER_MESSAGES[hash % PHRASE_REMINDER_MESSAGES.length];
+/**
+ * Título y cuerpo de la notificación para un día concreto, al estilo de
+ * una columna de horóscopo de periódico: el signo como encabezado y la
+ * lectura del día como cuerpo.
+ */
+export function buildPhraseNotificationContent(
+  sign: ZodiacSign,
+  content: DailyContent
+): { title: string; body: string } {
+  return {
+    title: `${ZODIAC_LABELS[sign]} · tu lectura de hoy`,
+    body: content.shortAstrologyText,
+  };
 }
