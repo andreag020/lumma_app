@@ -30,11 +30,12 @@ Lumma es **local-first**: **no hay backend ni servidor que hostear**.
 - **Los datos** de la usuaria viven solo en su dispositivo (SQLite). No salen del teléfono.
 - **La API key de Claude** vive **solo** en el script de generación offline (`scripts/generate-content.mjs`), en tu máquina o en un secreto de CI — **nunca dentro de la app**. Incrustarla en el bundle permitiría extraerla del APK.
 - **El contenido** (astrología + frases) se genera **por lotes, fuera de la app**, con Claude Haiku 4.5 (Batch API), y se empaqueta como `assets/content/content.json`, que la app lee localmente. No hay llamadas a la API de Claude en tiempo de ejecución.
+- **Fundamentado en astronomía real:** el script calcula, para cada fecha, la posición real de los astros (signo que transita el Sol, signo y fase de la Luna, y los signos de Mercurio, Venus y Marte) con `astronomy-engine` — cálculo puro en Node, sin dependencias nativas ni impacto en el bundle. Esos datos reales se le pasan a Claude para que la lectura esté anclada al cielo del día. *(Las posiciones son reales; la interpretación astrológica es texto generado, como en cualquier horóscopo.)*
 
 Generar el contenido completo (requiere tu clave, se ejecuta en tu máquina):
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+export ANTHROPIC_API_KEY=sk-ant-...      # Windows PowerShell: $env:ANTHROPIC_API_KEY="sk-ant-..."
 npm run generate:content -- --days 30 --start 2026-07-13
 ```
 
