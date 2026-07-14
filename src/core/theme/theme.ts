@@ -5,6 +5,7 @@
  *
  * Fuente: concepto-de-marca.md → "Dirección visual".
  */
+import { fonts } from './fonts';
 
 export const colors = {
   // Fondos: noche profunda
@@ -48,8 +49,10 @@ export const radius = {
 } as const;
 
 export const typography = {
-  display: { fontSize: 34, fontWeight: '300' as const, letterSpacing: 1 },
-  title: { fontSize: 24, fontWeight: '400' as const },
+  // Encabezados: serif itálica de marca (ver fonts.ts). Solo títulos y
+  // citas — el resto de la interfaz usa la fuente del sistema.
+  display: { fontFamily: fonts.heading, fontSize: 38, letterSpacing: 0.3 },
+  title: { fontFamily: fonts.heading, fontSize: 28, letterSpacing: 0.2 },
   body: { fontSize: 16, fontWeight: '400' as const, lineHeight: 24 },
   caption: { fontSize: 13, fontWeight: '400' as const },
 } as const;

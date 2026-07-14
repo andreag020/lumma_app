@@ -36,3 +36,24 @@ export const ZODIAC_LABELS: Record<ZodiacSign, string> = {
   acuario: 'Acuario',
   piscis: 'Piscis',
 };
+
+// U+FE0E: selector de presentación de TEXTO. Sin él, muchas fuentes/SO
+// renderizan los glifos astrológicos como emoji a todo color (rompe la
+// paleta y el tono "líneas finas y discretas" de la marca).
+const TEXT_PRESENTATION = '︎';
+
+/** Glifo astrológico (Unicode, sin dependencias de íconos) por signo. */
+export const ZODIAC_SYMBOLS: Record<ZodiacSign, string> = {
+  aries: '♈' + TEXT_PRESENTATION,
+  tauro: '♉' + TEXT_PRESENTATION,
+  geminis: '♊' + TEXT_PRESENTATION,
+  cancer: '♋' + TEXT_PRESENTATION,
+  leo: '♌' + TEXT_PRESENTATION,
+  virgo: '♍' + TEXT_PRESENTATION,
+  libra: '♎' + TEXT_PRESENTATION,
+  escorpio: '♏' + TEXT_PRESENTATION,
+  sagitario: '♐' + TEXT_PRESENTATION,
+  capricornio: '♑' + TEXT_PRESENTATION,
+  acuario: '♒' + TEXT_PRESENTATION,
+  piscis: '♓' + TEXT_PRESENTATION,
+};

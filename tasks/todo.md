@@ -86,16 +86,18 @@ Visualización anual con `@shopify/react-native-skia` (un solo Canvas nativo, no
 
 ## Fase 3 — Retención y monetización
 
-### [x] T10 · Notificaciones locales — `M`
-`expo-notifications` programa (o reprograma) una notificación diaria a la hora del perfil, con un mensaje breve y calmado elegido de un pool fijo — no del contenido astrológico del día, porque una notificación programada con horas/días de anticipación no puede conocer la fecha en la que sonará. Sin servidor, sin push remoto (confirmado: Expo Go SDK 54 solo quitó el push remoto, las notificaciones locales siguen funcionando).
-- **Aceptación:** ✅ se programa a la hora del perfil (`SchedulableTriggerInputTypes.DAILY`); no bloquea la app si se niega el permiso; se reprograma solo si la hora cambia (Home).
-- **Verificación:** ✅ `npm run typecheck` limpio (validó la API real de `expo-notifications`, corrigió `sound: null` → `false`); `npm test` verde — pruebas de `parseTime`/`pickReminderMessage` (lógica pura, sin el módulo nativo).
+### [x] T10 · Notificación de la frase diaria — `M`
+`expo-notifications` programa (o reprograma) **una notificación sobre la frase/guía diaria** a la hora del perfil, con un mensaje breve y calmado elegido de un pool fijo — no el contenido astrológico exacto del día, porque una notificación programada con horas/días de anticipación no puede conocer la fecha en la que sonará. Sin servidor, sin push remoto (confirmado: Expo Go SDK 54 solo quitó el push remoto, las notificaciones locales siguen funcionando).
+- **Aclaración (corregido tras revisión):** esta notificación es sobre la **frase diaria**, no sobre el registro de ánimo. Vive en su propio canal de Android (`daily-phrase`) e identificador propio, precisamente para no chocar con el futuro recordatorio de ánimo de T11.
+- **Aceptación:** ✅ se programa a la hora del perfil (`SchedulableTriggerInputTypes.DAILY`); no bloquea la app si se niega el permiso; se reprograma solo si la hora cambia (Home); solo cancela notificaciones de su propio canal, no todas.
+- **Verificación:** ✅ `npm run typecheck` limpio (validó la API real de `expo-notifications`: `identifier`, `trigger.channelId`, corrigió `sound: null` → `false`); `npm test` verde — pruebas de `parseTime`/`pickPhraseReminderMessage` (lógica pura, sin el módulo nativo).
 - **Depende de:** T5, T6 · **Archivos:** `src/services/notificationService.ts`, `src/services/notificationText.ts`.
 
 ### [ ] T11 · Ajustes + privacidad — `M`
 Ajustes: borrar todos los datos (`wipeAllData`), ver qué se guarda, gestionar consentimiento.
-- **Aceptación:** «borrar mis datos» limpia SQLite y vuelve a onboarding; texto de privacidad visible; consentimiento persistido.
-- **Verificación:** borrar deja tablas vacías; render de la pantalla.
+- **Nuevo alcance (a pedido de la usuaria):** además de lo original, esta pantalla debe permitir configurar un **recordatorio de ánimo separado** (hora propia, on/off), independiente del recordatorio de la frase diaria (T10). Usar un canal de Android distinto (p. ej. `daily-mood`) y su propio identificador — no reutilizar `daily-phrase`.
+- **Aceptación:** «borrar mis datos» limpia SQLite y vuelve a onboarding; texto de privacidad visible; consentimiento persistido; recordatorio de ánimo configurable de forma independiente al de la frase diaria.
+- **Verificación:** borrar deja tablas vacías; render de la pantalla; programar/cancelar el recordatorio de ánimo no afecta el de la frase diaria.
 - **Depende de:** T4 · **Archivos:** `app/settings.tsx`.
 
 ### [ ] T12 · AdMob básico — `S`

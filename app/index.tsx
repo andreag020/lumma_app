@@ -1,20 +1,28 @@
 import { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, Link } from 'expo-router';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useProfileStore } from '../src/stores/profileStore';
 import { useEntryStore } from '../src/stores/entryStore';
 import { getDailyContent } from '../src/services/contentService';
-import { scheduleDailyReminder } from '../src/services/notificationService';
+import { scheduleDailyPhraseReminder } from '../src/services/notificationService';
 import { todayISODate } from '../src/core/utils/date';
-import { ZODIAC_LABELS, type DailyContent } from '../src/models';
+import { AmbientSky } from '../src/components/AmbientSky';
+import { AnimatedPressable } from '../src/components/AnimatedPressable';
+import {
+  ZODIAC_LABELS,
+  ZODIAC_SYMBOLS,
+  type DailyContent,
+} from '../src/models';
 import { colors, spacing, radius, typography } from '../src/core/theme/theme';
+import { fonts } from '../src/core/theme/fonts';
 
 /** Home: astrología del día + frase, o redirección a onboarding sin perfil. */
 export default function Index() {
@@ -48,10 +56,11 @@ export default function Index() {
     };
   }, [profile]);
 
-  // Local únicamente, sin bloquear la carga de Home si el permiso falla.
+  // Recordatorio de la FRASE diaria (no de ánimo). Local únicamente, sin
+  // bloquear la carga de Home si el permiso falla.
   useEffect(() => {
     if (!profile) return;
-    scheduleDailyReminder(profile).catch((err) => {
+    scheduleDailyPhraseReminder(profile).catch((err: unknown) => {
       console.warn('No se pudo programar el recordatorio diario', err);
     });
   }, [profile?.notificationTime]);
@@ -69,72 +78,107 @@ export default function Index() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>
-          {profile.nickname ? `Hola, ${profile.nickname}` : 'Hola de nuevo'}
-        </Text>
-        <Text style={styles.sign}>{ZODIAC_LABELS[profile.zodiacSign]}</Text>
-      </View>
-
-      {!contentLoaded ? (
-        <ActivityIndicator
-          color={colors.gold}
-          style={{ marginTop: spacing.xl }}
-        />
-      ) : content ? (
-        <View style={styles.card}>
-          <Text style={styles.astrology}>{content.shortAstrologyText}</Text>
-          <View style={styles.divider} />
-          <Text style={styles.phrase}>&ldquo;{content.dailyPhrase}&rdquo;</Text>
+    <View style={styles.root}>
+      <AmbientSky />
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.greeting}>
+                {profile.nickname ? `Hola, ${profile.nickname}` : 'Hola de nuevo'}
+              </Text>
+              <Text style={styles.sign}>{ZODIAC_LABELS[profile.zodiacSign]}</Text>
+            </View>
+            <PulsingGlyph symbol={ZODIAC_SYMBOLS[profile.zodiacSign]} />
+          </View>
         </View>
-      ) : (
-        <View style={styles.card}>
-          <Text style={styles.astrology}>
-            Hoy no encontramos tu guía astrológica. Vuelve a intentarlo
-            mañana.
-          </Text>
-        </View>
-      )}
 
-      <View style={styles.actions}>
-        {todayEntry && (
-          <View style={styles.todayPreview}>
-            <View
-              style={[styles.dot, { backgroundColor: todayEntry.moodColor }]}
-            />
-            <Text style={styles.todayPreviewText}>
-              Hoy: {todayEntry.moodLabel}
+        {!contentLoaded ? (
+          <ActivityIndicator
+            color={colors.gold}
+            style={{ marginTop: spacing.xl }}
+          />
+        ) : content ? (
+          <View style={styles.card}>
+            <Text style={styles.astrology}>{content.shortAstrologyText}</Text>
+            <View style={styles.divider} />
+            <Text style={styles.phrase}>&ldquo;{content.dailyPhrase}&rdquo;</Text>
+          </View>
+        ) : (
+          <View style={styles.card}>
+            <Text style={styles.astrology}>
+              Hoy no encontramos tu guía astrológica. Vuelve a intentarlo
+              mañana.
             </Text>
           </View>
         )}
 
-        <Link href="/mood" asChild>
-          <Pressable style={styles.moodButton}>
-            <Text style={styles.moodButtonText}>
-              {todayEntry
-                ? 'Editar mi ánimo de hoy'
-                : 'Registrar mi ánimo de hoy'}
-            </Text>
-          </Pressable>
-        </Link>
+        <View style={styles.actions}>
+          {todayEntry && (
+            <View style={styles.todayPreview}>
+              <View
+                style={[styles.dot, { backgroundColor: todayEntry.moodColor }]}
+              />
+              <Text style={styles.todayPreviewText}>
+                Hoy: {todayEntry.moodLabel}
+              </Text>
+            </View>
+          )}
 
-        <Link href="/firmament" asChild>
-          <Pressable style={styles.firmamentLink}>
-            <Text style={styles.firmamentLinkText}>
-              Ver mi firmamento personal
-            </Text>
-          </Pressable>
-        </Link>
-      </View>
-    </SafeAreaView>
+          <Link href="/mood" asChild>
+            <AnimatedPressable style={styles.moodButton}>
+              <Text style={styles.moodButtonText}>
+                {todayEntry
+                  ? 'Editar mi ánimo de hoy'
+                  : 'Registrar mi ánimo de hoy'}
+              </Text>
+            </AnimatedPressable>
+          </Link>
+
+          <Link href="/firmament" asChild>
+            <AnimatedPressable style={styles.firmamentLink}>
+              <Text style={styles.firmamentLinkText}>
+                Ver mi firmamento personal
+              </Text>
+            </AnimatedPressable>
+          </Link>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+/** Glifo del signo con un titileo lento, como una luz que respira. */
+function PulsingGlyph({ symbol }: { symbol: string }) {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = withRepeat(
+      withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: 0.7 + progress.value * 0.3,
+    transform: [{ scale: 1 + progress.value * 0.08 }],
+  }));
+
+  return (
+    <Animated.Text style={[styles.glyph, animatedStyle]}>
+      {symbol}
+    </Animated.Text>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  container: {
+    flex: 1,
     padding: spacing.lg,
   },
   centerContainer: {
@@ -147,6 +191,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     marginBottom: spacing.lg,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   greeting: {
     ...typography.title,
     color: colors.ivory,
@@ -157,6 +205,11 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     marginTop: spacing.xs,
+  },
+  glyph: {
+    fontSize: 40,
+    color: colors.gold,
+    marginLeft: spacing.md,
   },
   card: {
     backgroundColor: colors.surface,
@@ -175,9 +228,10 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   phrase: {
-    ...typography.body,
+    fontFamily: fonts.quote,
+    fontSize: 19,
+    lineHeight: 26,
     color: colors.lavender,
-    fontStyle: 'italic',
   },
   actions: {
     marginTop: 'auto',

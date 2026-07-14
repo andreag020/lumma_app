@@ -62,6 +62,7 @@ npm test            # pruebas de lógica (Jest)
 - ✅ **Fase 1 (Ritual básico):** contenido diario, onboarding (signo + hora de notificación), pantalla Home con astrología y frase del día. *(Checkpoint B)*
 - ✅ **Fase 2 (Core):** registro de ánimo (paleta fija de 8 colores) y firmamento personal anual (Skia). *(Checkpoint C)*
 - 🚧 **Fase 3:** notificaciones locales ✅ · ajustes/privacidad ⏳ · AdMob ⏳.
+- 🎨 **Pulido visual** (a pedido de la usuaria, tras probar en dispositivo): luces ambientales tipo luciérnaga/estrella (`src/components/AmbientSky.tsx`, Skia + Reanimated) detrás del contenido en Home/Onboarding/Registro de ánimo; glifos zodiacales (♈♉♊…) en los chips de signo y como acento animado en Home; micro-interacción de escala al tocar botones y chips principales (`src/components/AnimatedPressable.tsx`). Misma paleta de siempre — sin colores nuevos.
 
 Ver el detalle y la siguiente tarea en [`tasks/todo.md`](./tasks/todo.md).
 

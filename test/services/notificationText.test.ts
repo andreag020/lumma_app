@@ -1,7 +1,7 @@
 import {
   parseTime,
-  pickReminderMessage,
-  REMINDER_MESSAGES,
+  pickPhraseReminderMessage,
+  PHRASE_REMINDER_MESSAGES,
 } from '../../src/services/notificationText';
 
 describe('parseTime', () => {
@@ -11,14 +11,16 @@ describe('parseTime', () => {
   });
 });
 
-describe('pickReminderMessage', () => {
+describe('pickPhraseReminderMessage', () => {
   test('always returns a message from the pool', () => {
     for (const seed of ['21:00', '07:00', '18:00', '', 'abc']) {
-      expect(REMINDER_MESSAGES).toContain(pickReminderMessage(seed));
+      expect(PHRASE_REMINDER_MESSAGES).toContain(pickPhraseReminderMessage(seed));
     }
   });
 
   test('is deterministic for the same seed', () => {
-    expect(pickReminderMessage('21:00')).toBe(pickReminderMessage('21:00'));
+    expect(pickPhraseReminderMessage('21:00')).toBe(
+      pickPhraseReminderMessage('21:00')
+    );
   });
 });

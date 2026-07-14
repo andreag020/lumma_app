@@ -1,14 +1,27 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, LogBox } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts } from 'expo-font';
 import { getDb } from '../src/core/db/database';
 import { seedContent } from '../src/services/contentService';
 import { colors } from '../src/core/theme/theme';
+import { fontAssets } from '../src/core/theme/fonts';
+
+// Aviso esperado y conocido en Expo Go SDK 54: expo-notifications intenta
+// registrar automáticamente un token de push remoto al importarse, algo
+// que Expo Go ya no soporta desde el SDK 53. No nos afecta — Lumma solo
+// usa notificaciones locales — y no es un error real, así que se silencia
+// para no confundir con problemas de verdad durante el desarrollo.
+LogBox.ignoreLogs([
+  'expo-notifications: Android Push notifications',
+  "'expo-notifications' functionality is not fully supported in Expo Go",
+]);
 
 export default function RootLayout() {
-  const [ready, setReady] = useState(false);
+  const [dbReady, setDbReady] = useState(false);
+  const [fontsLoaded] = useFonts(fontAssets);
 
   useEffect(() => {
     // Abrir la base local, aplicar migraciones y sembrar el contenido
@@ -20,10 +33,12 @@ export default function RootLayout() {
       } catch (err) {
         console.error('No se pudo inicializar la app', err);
       } finally {
-        setReady(true);
+        setDbReady(true);
       }
     })();
   }, []);
+
+  const ready = dbReady && fontsLoaded;
 
   if (!ready) {
     return (
