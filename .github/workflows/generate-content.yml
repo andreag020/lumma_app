@@ -1,0 +1,75 @@
+name: Generar contenido diario
+
+# Corre cada lunes y genera 10 días de lecturas (12 signos × 10 — 7 días
+# "de cara" a la usuaria + 3 de margen por si el cron se atrasa),
+# fundamentadas en la posición real de los astros, con Claude Haiku 4.5.
+# También se puede disparar a mano desde la pestaña Actions.
+#
+# El resultado se guarda en dos lugares:
+#   1. Se commitea en el repo (privado) como respaldo embebido en la app —
+#      lo que ya trae la app instalada si nunca hay red.
+#   2. Se publica en GitHub Pages (público, aunque el repo sea privado)
+#      SOLO ese archivo JSON — no el código — para que la app lo descargue
+#      cada semana sin necesitar una nueva versión en Play Store.
+#
+# Requisito único de configuración (una sola vez): en Settings → Pages,
+# elegir "Source: GitHub Actions".
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    outputs:
+      content-hash: ${{ steps.hash.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --legacy-peer-deps
+
+      - name: Generar assets/content/content.json
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: npm run generate:content -- --days 10
+
+      - name: Commitear contenido si cambió (respaldo embebido)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/content/content.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios en el contenido."
+          else
+            git commit -m "chore: regenerar contenido diario (automático)"
+            git push
+          fi
+
+      - name: Preparar carpeta pública (solo el JSON, nunca el código)
+        run: |
+          mkdir -p public-content
+          cp assets/content/content.json public-content/content.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public-content
+
+  deploy-pages:
+    needs: generate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

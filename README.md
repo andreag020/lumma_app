@@ -29,13 +29,27 @@ Lumma es **local-first**: **no hay backend ni servidor que hostear**.
 - **La app** corre en el teléfono de cada usuaria; se distribuye por Google Play (y luego App Store).
 - **Los datos** de la usuaria viven solo en su dispositivo (SQLite). No salen del teléfono.
 - **La API key de Claude** vive **solo** en el script de generación offline (`scripts/generate-content.mjs`), en tu máquina o en un secreto de CI — **nunca dentro de la app**. Incrustarla en el bundle permitiría extraerla del APK.
-- **El contenido** (astrología + frases) se genera **por lotes, fuera de la app**, con Claude Haiku 4.5 (Batch API), y se empaqueta como `assets/content/content.json`, que la app lee localmente. No hay llamadas a la API de Claude en tiempo de ejecución.
+- **El contenido** (astrología + frases) se genera **por lotes, fuera de la app**, con Claude Haiku 4.5 (Batch API), y se empaqueta como `assets/content/content.json` como respaldo embebido (primer arranque sin red). No hay llamadas a la API de Claude en tiempo de ejecución.
 - **Fundamentado en astronomía real:** el script calcula, para cada fecha, la posición real de los astros (signo que transita el Sol, signo y fase de la Luna, y los signos de Mercurio, Venus y Marte) con `astronomy-engine` — cálculo puro en Node, sin dependencias nativas ni impacto en el bundle. Esos datos reales se le pasan a Claude para que la lectura esté anclada al cielo del día. *(Las posiciones son reales; la interpretación astrológica es texto generado, como en cualquier horóscopo.)*
 
-Generar el contenido completo (requiere tu clave, se ejecuta en tu máquina):
+**Generación automática, semanal (recomendado):** [`.github/workflows/generate-content.yml`](./.github/workflows/generate-content.yml) corre cada lunes (y a mano desde la pestaña *Actions*), regenera `assets/content/content.json` con 10 días de lecturas (7 días de cara a la usuaria + 3 de margen) y hace dos cosas con el resultado:
+
+1. Lo commitea al repo (privado) como respaldo embebido en la próxima build de la app.
+2. Publica **solo ese archivo JSON** (nunca el código) en **GitHub Pages** — que es público aunque el repo sea privado — para que la app instalada lo descargue directamente. Así el contenido se renueva cada semana **sin publicar una nueva versión en Play Store**: la app hace un fetch de fondo al abrir (`src/services/contentService.ts#refreshRemoteContent`), como mucho una vez al día, con `INSERT OR REPLACE` en SQLite; si no hay red, sigue con lo que ya tenía. La clave de Claude nunca sale del entorno seguro de GitHub Actions.
+
+Requiere dos configuraciones únicas, una sola vez:
+- **Secreto de la clave:** *Settings → Secrets and variables → Actions → New repository secret* → nombre `ANTHROPIC_API_KEY`.
+- **Habilitar Pages:** *Settings → Pages → Build and deployment → Source: "GitHub Actions"*.
+
+**Generación manual (opcional, en tu máquina):** crea un archivo `.env` en la raíz del proyecto (ya está en `.gitignore`, nunca se sube) con:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+y corre:
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...      # Windows PowerShell: $env:ANTHROPIC_API_KEY="sk-ant-..."
 npm run generate:content -- --days 30 --start 2026-07-13
 ```
 

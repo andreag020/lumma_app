@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { getDb } from '../src/core/db/database';
-import { seedContent } from '../src/services/contentService';
+import { seedContent, refreshRemoteContent } from '../src/services/contentService';
 import { colors } from '../src/core/theme/theme';
 import { fontAssets } from '../src/core/theme/fonts';
 
@@ -35,6 +35,9 @@ export default function RootLayout() {
       } finally {
         setDbReady(true);
       }
+      // No bloquea el arranque: si hay red, trae lecturas nuevas de fondo;
+      // si no, la app sigue con el contenido embebido/ya sincronizado.
+      refreshRemoteContent();
     })();
   }, []);
 

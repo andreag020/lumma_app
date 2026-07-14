@@ -54,7 +54,7 @@ Assets JSON cargados a SQLite (`bulkInsertContent`) y consultados por signo+fech
 - **Verificación:** ✅ typecheck; sembrado en arranque (`_layout`); script `generate:content` valida sintaxis y guardia de API key.
 - **Depende de:** T4 · **Archivos:** `assets/content/content.json`, `src/services/contentService.ts`, `scripts/generate-content.mjs`.
 
-> **Hosting / API key:** la app no tiene backend; la clave de Claude vive solo en el script offline (`scripts/generate-content.mjs`), nunca en el bundle. El contenido se empaqueta como asset JSON.
+> **Hosting / API key:** la app no tiene backend; la clave de Claude vive solo en el script offline (`scripts/generate-content.mjs`) y como secreto de GitHub Actions, nunca en el bundle. El contenido se empaqueta como asset JSON (respaldo para el primer arranque sin red) **y además** se sincroniza semanalmente: [`.github/workflows/generate-content.yml`](../.github/workflows/generate-content.yml) corre cada lunes, regenera 10 días de lecturas y publica el JSON en GitHub Pages (público, aunque el repo es privado); la app lo descarga solo (`contentService.refreshRemoteContent`, ≤1 vez/día) sin necesitar una nueva versión en Play Store.
 
 ### [x] T7 · Pantalla Home — `M`
 Astrología del signo + frase del día desde contenido local, con acceso al registro. `app/index.tsx` hace de puerta: sin perfil redirige a onboarding; con perfil muestra el contenido del día vía `getDailyContent`.
