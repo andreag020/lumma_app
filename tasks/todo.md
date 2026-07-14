@@ -86,12 +86,14 @@ Visualización anual con `@shopify/react-native-skia` (un solo Canvas nativo, no
 
 ## Fase 3 — Retención y monetización
 
-### [x] T10 · Notificación de la frase diaria — `M`
-`expo-notifications` programa (o reprograma) **una notificación sobre la frase/guía diaria** a la hora del perfil, con un mensaje breve y calmado elegido de un pool fijo — no el contenido astrológico exacto del día, porque una notificación programada con horas/días de anticipación no puede conocer la fecha en la que sonará. Sin servidor, sin push remoto (confirmado: Expo Go SDK 54 solo quitó el push remoto, las notificaciones locales siguen funcionando).
-- **Aclaración (corregido tras revisión):** esta notificación es sobre la **frase diaria**, no sobre el registro de ánimo. Vive en su propio canal de Android (`daily-phrase`) e identificador propio, precisamente para no chocar con el futuro recordatorio de ánimo de T11.
-- **Aceptación:** ✅ se programa a la hora del perfil (`SchedulableTriggerInputTypes.DAILY`); no bloquea la app si se niega el permiso; se reprograma solo si la hora cambia (Home); solo cancela notificaciones de su propio canal, no todas.
-- **Verificación:** ✅ `npm run typecheck` limpio (validó la API real de `expo-notifications`: `identifier`, `trigger.channelId`, corrigió `sound: null` → `false`); `npm test` verde — pruebas de `parseTime`/`pickPhraseReminderMessage` (lógica pura, sin el módulo nativo).
-- **Depende de:** T5, T6 · **Archivos:** `src/services/notificationService.ts`, `src/services/notificationText.ts`.
+### [x] T10 · Notificación de la frase diaria (estilo horóscopo de periódico) — `M`
+`expo-notifications` programa **una notificación por cada uno de los próximos 21 días** (ventana móvil, no una sola repetitiva), cada una con la **lectura real del signo para esa fecha** — como la entrega diaria de un horóscopo de periódico, no un texto genérico. Sin servidor, sin push remoto (confirmado: Expo Go SDK 54 solo quitó el push remoto, las notificaciones locales siguen funcionando).
+- **Rediseño (a pedido de la usuaria):** (1) el contenido ahora es la lectura real del signo (`shortAstrologyText` vía `getDailyContent`), con título `"{Signo} · tu lectura de hoy"` — no un mensaje genérico; (2) los horarios de onboarding se rebalancearon (`07:00, 08:00, 12:00, 18:00, 21:00`, default `08:00`) para no sesgar hacia la noche — muchas personas leen su lectura al empezar el día.
+- **Límite técnico asumido:** iOS limita a 64 notificaciones locales pendientes por app; se usa una ventana de 21 días (con margen para el futuro recordatorio de ánimo de T11), que se renueva cada vez que se llama la función (Home la reprograma en cada apertura). Los días sin contenido bundleado se saltan en vez de inventar texto.
+- **Nota honesta:** el contenido de muestra (`assets/content/content.json`) hoy solo tiene 1 día real por signo; hasta correr `npm run generate:content` con 30 días, las 21 notificaciones mostrarán la misma lectura (por el respaldo rotativo de `contentService`) — es el comportamiento esperado, no un bug.
+- **Aceptación:** ✅ se programa a la hora del perfil (`SchedulableTriggerInputTypes.DATE`, una por fecha); no bloquea la app si se niega el permiso; se reprograma solo si la hora cambia (Home); solo cancela notificaciones de su propio canal, no todas; sin push remoto.
+- **Verificación:** ✅ `npm run typecheck` limpio (validó la API real de `expo-notifications`: `identifier`, `trigger.channelId`/`DATE`); `npm test` verde — pruebas de `parseTime`, `buildPhraseNotificationContent` y `addDays` (lógica pura, sin el módulo nativo).
+- **Depende de:** T5, T6 · **Archivos:** `src/services/notificationService.ts`, `src/services/notificationText.ts`, `src/core/utils/date.ts`.
 
 ### [ ] T11 · Ajustes + privacidad — `M`
 Ajustes: borrar todos los datos (`wipeAllData`), ver qué se guarda, gestionar consentimiento.

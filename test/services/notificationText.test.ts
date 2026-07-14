@@ -1,8 +1,8 @@
 import {
   parseTime,
-  pickPhraseReminderMessage,
-  PHRASE_REMINDER_MESSAGES,
+  buildPhraseNotificationContent,
 } from '../../src/services/notificationText';
+import type { DailyContent } from '../../src/models';
 
 describe('parseTime', () => {
   test('parses "HH:mm" into [hour, minute]', () => {
@@ -11,16 +11,23 @@ describe('parseTime', () => {
   });
 });
 
-describe('pickPhraseReminderMessage', () => {
-  test('always returns a message from the pool', () => {
-    for (const seed of ['21:00', '07:00', '18:00', '', 'abc']) {
-      expect(PHRASE_REMINDER_MESSAGES).toContain(pickPhraseReminderMessage(seed));
-    }
+describe('buildPhraseNotificationContent', () => {
+  const content: DailyContent = {
+    contentId: 'leo-2026-07-13',
+    date: '2026-07-13',
+    zodiacSign: 'leo',
+    shortAstrologyText: 'No necesitas iluminar toda la sala hoy.',
+    dailyPhrase: 'Descansar también es una forma de reinar.',
+    extendedText: null,
+  };
+
+  test('titles with the sign label, styled like a newspaper column', () => {
+    const { title } = buildPhraseNotificationContent('leo', content);
+    expect(title).toBe('Leo · tu lectura de hoy');
   });
 
-  test('is deterministic for the same seed', () => {
-    expect(pickPhraseReminderMessage('21:00')).toBe(
-      pickPhraseReminderMessage('21:00')
-    );
+  test('uses the astrology reading (not the generic phrase) as the body', () => {
+    const { body } = buildPhraseNotificationContent('leo', content);
+    expect(body).toBe(content.shortAstrologyText);
   });
 });

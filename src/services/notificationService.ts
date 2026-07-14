@@ -1,12 +1,21 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { Profile } from '../models';
-import { parseTime, pickPhraseReminderMessage } from './notificationText';
+import { getDailyContent } from './contentService';
+import { parseTime, buildPhraseNotificationContent } from './notificationText';
+import { addDays, todayISODate } from '../core/utils/date';
 
 // Canal propio (no "default"): cuando se agregue el recordatorio de ánimo
 // configurable desde Ajustes (tasks/todo.md T11), debe vivir en su propio
 // canal de Android, separado de este.
 const PHRASE_CHANNEL_ID = 'daily-phrase';
+
+// Una notificación por día (no una repetitiva con texto genérico) — cada
+// una lleva la lectura real del signo para esa fecha, como una entrega de
+// periódico. iOS limita a 64 notificaciones locales pendientes por app;
+// 21 días deja margen de sobra para un futuro recordatorio de ánimo (T11)
+// y se renueva cada vez que se llama esta función (p. ej. al abrir Home).
+const ROLLING_WINDOW_DAYS = 21;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -26,10 +35,12 @@ async function ensureAndroidChannel(): Promise<void> {
 }
 
 /**
- * Programa (o reprograma) el recordatorio diario para leer la frase del
- * día, a la hora del perfil. Local únicamente — sin servidor, sin push
- * remoto. Si la usuaria no concede permiso, no hace nada: las
- * notificaciones son un extra, nunca bloquean el uso de la app.
+ * Programa una notificación por cada uno de los próximos
+ * `ROLLING_WINDOW_DAYS` días, a la hora del perfil, con la lectura real
+ * del signo para esa fecha (estilo horóscopo de periódico) — no un texto
+ * genérico. Local únicamente — sin servidor, sin push remoto. Si la
+ * usuaria no concede permiso, no hace nada: las notificaciones son un
+ * extra, nunca bloquean el uso de la app.
  *
  * Este recordatorio es sobre la frase diaria, no sobre el ánimo — un
  * recordatorio de ánimo aparte se configurará desde Ajustes más adelante
@@ -58,20 +69,36 @@ export async function scheduleDailyPhraseReminder(
   );
 
   const [hour, minute] = parseTime(profile.notificationTime);
+  const today = todayISODate();
 
-  await Notifications.scheduleNotificationAsync({
-    identifier: `${PHRASE_CHANNEL_ID}-${profile.userIdLocal}`,
-    content: {
-      title: 'Lumma',
-      body: pickPhraseReminderMessage(profile.notificationTime),
-      // Silenciosa: coherente con una app de calma nocturna.
-      sound: false,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour,
-      minute,
-      channelId: PHRASE_CHANNEL_ID,
-    },
-  });
+  for (let offset = 0; offset < ROLLING_WINDOW_DAYS; offset++) {
+    const date = addDays(today, offset);
+
+    const fireDate = new Date(`${date}T00:00:00`);
+    fireDate.setHours(hour, minute, 0, 0);
+    if (fireDate.getTime() <= Date.now()) continue; // ya pasó hoy — se salta
+
+    const content = await getDailyContent(date, profile.zodiacSign);
+    if (!content) continue; // sin lectura para esa fecha: no se inventa una
+
+    const { title, body } = buildPhraseNotificationContent(
+      profile.zodiacSign,
+      content
+    );
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: `${PHRASE_CHANNEL_ID}-${date}`,
+      content: {
+        title,
+        body,
+        // Silenciosa: coherente con una app de calma.
+        sound: false,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: fireDate,
+        channelId: PHRASE_CHANNEL_ID,
+      },
+    });
+  }
 }
