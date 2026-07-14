@@ -12,7 +12,7 @@ import Animated, {
 import { useProfileStore } from '../src/stores/profileStore';
 import { useEntryStore } from '../src/stores/entryStore';
 import { getDailyContent } from '../src/services/contentService';
-import { scheduleDailyReminder } from '../src/services/notificationService';
+import { scheduleDailyPhraseReminder } from '../src/services/notificationService';
 import { todayISODate } from '../src/core/utils/date';
 import { AmbientSky } from '../src/components/AmbientSky';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
@@ -56,10 +56,11 @@ export default function Index() {
     };
   }, [profile]);
 
-  // Local únicamente, sin bloquear la carga de Home si el permiso falla.
+  // Recordatorio de la FRASE diaria (no de ánimo). Local únicamente, sin
+  // bloquear la carga de Home si el permiso falla.
   useEffect(() => {
     if (!profile) return;
-    scheduleDailyReminder(profile).catch((err) => {
+    scheduleDailyPhraseReminder(profile).catch((err: unknown) => {
       console.warn('No se pudo programar el recordatorio diario', err);
     });
   }, [profile?.notificationTime]);
