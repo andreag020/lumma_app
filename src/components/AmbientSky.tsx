@@ -25,8 +25,10 @@ interface LightSpec {
   driftY: number;
   radius: number;
   color: string;
-  duration: number;
-  delay: number;
+  durationX: number;
+  durationY: number;
+  delayX: number;
+  delayY: number;
 }
 
 // Solo acentos de luz de la paleta de marca — nunca colores nuevos.
@@ -38,26 +40,43 @@ function makeLights(width: number, height: number, count: number): LightSpec[] {
     lights.push({
       baseX: Math.random() * width,
       baseY: Math.random() * height,
-      driftX: 14 + Math.random() * 22,
-      driftY: 10 + Math.random() * 18,
+      driftX: 24 + Math.random() * 32,
+      driftY: 18 + Math.random() * 26,
       radius: 1.3 + Math.random() * 2,
       color: LIGHT_COLORS[i % LIGHT_COLORS.length],
-      duration: 4200 + Math.random() * 3600,
-      delay: Math.random() * 2400,
+      // Duraciones distintas en X e Y (más un desfase de arranque) para
+      // que la trayectoria sea un vaivén, no una diagonal recta — se
+      // siente más parecido al vuelo errático de una luciérnaga.
+      durationX: 3200 + Math.random() * 2800,
+      durationY: 3800 + Math.random() * 3200,
+      delayX: Math.random() * 2000,
+      delayY: 300 + Math.random() * 2000,
     });
   }
   return lights;
 }
 
 function FloatingLight({ light }: { light: LightSpec }) {
-  const progress = useSharedValue(0);
+  const progressX = useSharedValue(0);
+  const progressY = useSharedValue(0);
 
   useEffect(() => {
-    progress.value = withDelay(
-      light.delay,
+    progressX.value = withDelay(
+      light.delayX,
       withRepeat(
         withTiming(1, {
-          duration: light.duration,
+          duration: light.durationX,
+          easing: Easing.inOut(Easing.sin),
+        }),
+        -1,
+        true
+      )
+    );
+    progressY.value = withDelay(
+      light.delayY,
+      withRepeat(
+        withTiming(1, {
+          duration: light.durationY,
           easing: Easing.inOut(Easing.sin),
         }),
         -1,
@@ -68,14 +87,29 @@ function FloatingLight({ light }: { light: LightSpec }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const cx = useDerivedValue(() => light.baseX + progress.value * light.driftX);
-  const cy = useDerivedValue(() => light.baseY - progress.value * light.driftY);
-  const opacity = useDerivedValue(() => 0.2 + progress.value * 0.5);
+  const cx = useDerivedValue(() => light.baseX + progressX.value * light.driftX);
+  const cy = useDerivedValue(() => light.baseY - progressY.value * light.driftY);
+  const haloOpacity = useDerivedValue(() => 0.25 + progressX.value * 0.55);
+  const coreOpacity = useDerivedValue(() => 0.55 + progressY.value * 0.45);
 
   return (
-    <Circle cx={cx} cy={cy} r={light.radius} color={light.color} opacity={opacity}>
-      <BlurMask blur={light.radius * 1.8} style="normal" />
-    </Circle>
+    <>
+      {/* Halo: el resplandor difuso, con el color de la luz. */}
+      <Circle cx={cx} cy={cy} r={light.radius} color={light.color} opacity={haloOpacity}>
+        <BlurMask blur={light.radius * 1.8} style="normal" />
+      </Circle>
+      {/* Núcleo: un punto pequeño y más brillante, casi blanco — como el
+          centro caliente de una luciérnaga o una estrella. */}
+      <Circle
+        cx={cx}
+        cy={cy}
+        r={light.radius * 0.4}
+        color={colors.ivory}
+        opacity={coreOpacity}
+      >
+        <BlurMask blur={0.5} style="normal" />
+      </Circle>
+    </>
   );
 }
 
