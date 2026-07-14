@@ -30,6 +30,12 @@ import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+try {
+  process.loadEnvFile(new URL('../.env', import.meta.url));
+} catch {
+  // Sin .env — se asume que ANTHROPIC_API_KEY ya está en el entorno.
+}
+
 const MODEL = 'claude-haiku-4-5';
 
 // Signos en el ORDEN del zodiaco tropical (0°=inicio de Aries). El índice
