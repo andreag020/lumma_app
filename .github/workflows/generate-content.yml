@@ -1,9 +1,10 @@
 name: Generar contenido diario
 
-# Corre cada lunes y genera 10 días de lecturas (12 signos × 10 — 7 días
-# "de cara" a la usuaria + 3 de margen por si el cron se atrasa),
-# fundamentadas en la posición real de los astros, con Claude Haiku 4.5.
-# También se puede disparar a mano desde la pestaña Actions.
+# Corre el sábado (dos días antes de que arranque la semana el lunes) y
+# genera 14 días de lecturas (12 signos × 14 — la semana entrante + una
+# semana extra de margen, por si el cron falla o se atrasa dos veces
+# seguidas), fundamentadas en la posición real de los astros, con Claude
+# Haiku 4.5. También se puede disparar a mano desde la pestaña Actions.
 #
 # El resultado se guarda en dos lugares:
 #   1. Se commitea en el repo (privado) como respaldo embebido en la app —
@@ -16,7 +17,7 @@ name: Generar contenido diario
 # elegir "Source: GitHub Actions".
 on:
   schedule:
-    - cron: '0 6 * * 1'
+    - cron: '0 6 * * 6'
   workflow_dispatch:
 
 permissions:
@@ -27,8 +28,6 @@ permissions:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    outputs:
-      content-hash: ${{ steps.hash.outputs.value }}
     steps:
       - uses: actions/checkout@v4
 
@@ -41,7 +40,7 @@ jobs:
       - name: Generar assets/content/content.json
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: npm run generate:content -- --days 10
+        run: npm run generate:content -- --days 14
 
       - name: Commitear contenido si cambió (respaldo embebido)
         run: |
