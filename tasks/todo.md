@@ -43,10 +43,11 @@ Modelos puros (dominio ↔ fila) y repositorios CRUD.
 ## Fase 1 — Ritual básico
 
 ### [x] T5 · Onboarding local — `M`
-Flujo sin cuenta: elegir signo (chips) y hora de notificación (chips preestablecidas); apodo opcional. Idioma y módulos quedan fijos (decisión ya resuelta en `plan.md`), sin pantalla adicional, para cumplir el objetivo de ≤60 s.
+Flujo sin cuenta: elegir signo (chips) y hora de notificación; apodo opcional. Idioma y módulos quedan fijos (decisión ya resuelta en `plan.md`), sin pantalla adicional, para cumplir el objetivo de ≤60 s.
+- **Selector de hora (actualizado a pedido de la usuaria):** al principio se usaban chips de horas preestablecidas para evitar sumar una dependencia nativa justo tras resolver un problema de compatibilidad de SDK; luego la usuaria pidió poder elegir cualquier hora a su conveniencia, así que se agregó `@react-native-community/datetimepicker` (`~8.4.4`, la versión exacta que trae empaquetada Expo Go SDK 54 — confirmado en `bundledNativeModules.json`) vía `src/components/TimePickerField.tsx`, reutilizado también en Ajustes (T11).
 - **Aceptación:** ✅ onboarding guarda el perfil vía `useProfileStore.save`; explica en pantalla qué se guarda («solo en tu teléfono»); redirige a Home al terminar.
-- **Verificación:** ✅ typecheck limpio; `Index` redirige a `/onboarding` cuando `getProfile()` devuelve `null` (recorrido manual en Expo Go pendiente de confirmar por la usuaria).
-- **Depende de:** T4, T2 · **Archivos:** `app/onboarding.tsx`, `src/stores/profileStore.ts`, `src/core/utils/id.ts`.
+- **Verificación:** ✅ typecheck limpio; `Index` redirige a `/onboarding` cuando `getProfile()` devuelve `null`; selector de hora verificado visualmente en Expo web (el picker nativo en sí solo se puede probar en Expo Go, no en web).
+- **Depende de:** T4, T2 · **Archivos:** `app/onboarding.tsx`, `src/stores/profileStore.ts`, `src/core/utils/id.ts`, `src/components/TimePickerField.tsx`.
 
 ### [x] T6 · Contenido diario empaquetado + service — `M`
 Assets JSON cargados a SQLite (`bulkInsertContent`) y consultados por signo+fecha, con respaldo determinista. Generación por lotes offline con Claude Haiku 4.5.

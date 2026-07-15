@@ -14,6 +14,7 @@ import { useProfileStore } from '../src/stores/profileStore';
 import { generateLocalId } from '../src/core/utils/id';
 import { AmbientSky } from '../src/components/AmbientSky';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
+import { TimePickerField } from '../src/components/TimePickerField';
 import {
   ZODIAC_SIGNS,
   ZODIAC_LABELS,
@@ -21,7 +22,6 @@ import {
   type ZodiacSign,
 } from '../src/models';
 import { colors, spacing, radius, typography } from '../src/core/theme/theme';
-import { NOTIFICATION_TIMES } from '../src/core/constants';
 
 const DEFAULT_MODULES = ['astrology', 'mood', 'firmament'];
 
@@ -109,27 +109,7 @@ export default function Onboarding() {
             <Text style={styles.sectionLabel}>
               ¿Cuándo quieres tu recordatorio?
             </Text>
-            <View style={styles.row}>
-              {NOTIFICATION_TIMES.map((t) => {
-                const selected = t === time;
-                return (
-                  <AnimatedPressable
-                    key={t}
-                    onPress={() => setTime(t)}
-                    style={[styles.chip, selected && styles.chipSelected]}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selected && styles.chipTextSelected,
-                      ]}
-                    >
-                      {t}
-                    </Text>
-                  </AnimatedPressable>
-                );
-              })}
-            </View>
+            <TimePickerField value={time} onChange={setTime} />
 
             <Text style={styles.sectionLabel}>
               ¿Cómo te llamamos?{' '}
@@ -209,11 +189,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
   signChip: {
     width: 76,
     paddingVertical: spacing.sm,
@@ -242,26 +217,6 @@ const styles = StyleSheet.create({
   signChipTextSelected: {
     color: colors.ivory,
     fontWeight: '600',
-  },
-  chip: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  chipSelected: {
-    borderColor: colors.gold,
-    backgroundColor: colors.surfaceMuted,
-  },
-  chipText: {
-    ...typography.body,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  chipTextSelected: {
-    color: colors.gold,
   },
   input: {
     borderWidth: 1,
