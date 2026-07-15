@@ -20,7 +20,7 @@ import {
 } from '../src/services/notificationService';
 import { AmbientSky } from '../src/components/AmbientSky';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
-import { NOTIFICATION_TIMES } from '../src/core/constants';
+import { TimePickerField } from '../src/components/TimePickerField';
 import {
   ZODIAC_SIGNS,
   ZODIAC_LABELS,
@@ -170,22 +170,7 @@ export default function Settings() {
             <Text style={styles.sectionLabel}>
               Recordatorio de tu lectura diaria
             </Text>
-            <View style={styles.row}>
-              {NOTIFICATION_TIMES.map((t) => {
-                const selected = t === phraseTime;
-                return (
-                  <AnimatedPressable
-                    key={t}
-                    onPress={() => setPhraseTime(t)}
-                    style={[styles.chip, selected && styles.chipSelected]}
-                  >
-                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                      {t}
-                    </Text>
-                  </AnimatedPressable>
-                );
-              })}
-            </View>
+            <TimePickerField value={phraseTime} onChange={setPhraseTime} />
 
             <Text style={styles.sectionTitle}>Recordatorio de ánimo</Text>
             <View style={styles.switchRow}>
@@ -200,24 +185,7 @@ export default function Settings() {
               />
             </View>
             {moodEnabled && (
-              <View style={styles.row}>
-                {NOTIFICATION_TIMES.map((t) => {
-                  const selected = t === moodTime;
-                  return (
-                    <AnimatedPressable
-                      key={t}
-                      onPress={() => setMoodTime(t)}
-                      style={[styles.chip, selected && styles.chipSelected]}
-                    >
-                      <Text
-                        style={[styles.chipText, selected && styles.chipTextSelected]}
-                      >
-                        {t}
-                      </Text>
-                    </AnimatedPressable>
-                  );
-                })}
-              </View>
+              <TimePickerField value={moodTime} onChange={setMoodTime} />
             )}
 
             <AnimatedPressable
@@ -310,11 +278,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
   signChip: {
     width: 76,
     paddingVertical: spacing.sm,
@@ -343,26 +306,6 @@ const styles = StyleSheet.create({
   signChipTextSelected: {
     color: colors.ivory,
     fontWeight: '600',
-  },
-  chip: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  chipSelected: {
-    borderColor: colors.gold,
-    backgroundColor: colors.surfaceMuted,
-  },
-  chipText: {
-    ...typography.body,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  chipTextSelected: {
-    color: colors.gold,
   },
   input: {
     borderWidth: 1,

@@ -2,13 +2,6 @@ import { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, Link } from 'expo-router';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
 import { useProfileStore } from '../src/stores/profileStore';
 import { useEntryStore } from '../src/stores/entryStore';
 import { getDailyContent } from '../src/services/contentService';
@@ -89,7 +82,7 @@ export default function Index() {
               </Text>
               <Text style={styles.sign}>{ZODIAC_LABELS[profile.zodiacSign]}</Text>
             </View>
-            <PulsingGlyph symbol={ZODIAC_SYMBOLS[profile.zodiacSign]} />
+            <Text style={styles.glyph}>{ZODIAC_SYMBOLS[profile.zodiacSign]}</Text>
             <Link href="/settings" asChild>
               <AnimatedPressable style={styles.settingsButton}>
                 <Text style={styles.settingsIcon}>{'⚙︎'}</Text>
@@ -150,30 +143,6 @@ export default function Index() {
         </View>
       </SafeAreaView>
     </View>
-  );
-}
-
-/** Glifo del signo con un titileo lento, como una luz que respira. */
-function PulsingGlyph({ symbol }: { symbol: string }) {
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = withRepeat(
-      withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }),
-      -1,
-      true
-    );
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: 0.7 + progress.value * 0.3,
-    transform: [{ scale: 1 + progress.value * 0.08 }],
-  }));
-
-  return (
-    <Animated.Text style={[styles.glyph, animatedStyle]}>
-      {symbol}
-    </Animated.Text>
   );
 }
 

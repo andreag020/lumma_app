@@ -3,6 +3,8 @@ import {
   View,
   Text,
   Pressable,
+  Modal,
+  ScrollView,
   ActivityIndicator,
   StyleSheet,
   useWindowDimensions,
@@ -18,7 +20,8 @@ import {
   daysInYear,
 } from '../src/features/firmament/layout';
 import type { DailyEntry } from '../src/models';
-import { colors, spacing, typography } from '../src/core/theme/theme';
+import { AnimatedPressable } from '../src/components/AnimatedPressable';
+import { colors, spacing, radius, typography } from '../src/core/theme/theme';
 
 // Puntos de fondo muy tenues: dan la forma del "cielo completo" del año
 // aunque ese día no tenga registro. Se dibujan en el mismo Canvas de Skia
@@ -26,10 +29,22 @@ import { colors, spacing, typography } from '../src/core/theme/theme';
 // costaría con componentes de React Native.
 const BACKGROUND_DOT_COLOR = 'rgba(244, 239, 227, 0.12)';
 
+// Primer año con datos posibles (fecha de nacimiento de Lumma). La lista
+// del selector crece sola cada año que pasa — nunca hay que tocar esto.
+const FIRST_YEAR = 2024;
+
 export default function Firmament() {
   const { width: screenWidth } = useWindowDimensions();
   const [entries, setEntries] = useState<DailyEntry[] | null>(null);
-  const year = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(currentYear);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const yearOptions = useMemo(() => {
+    const years: number[] = [];
+    for (let y = currentYear; y >= FIRST_YEAR; y--) years.push(y);
+    return years;
+  }, [currentYear]);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,7 +76,15 @@ export default function Firmament() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Text style={styles.back}>‹ Volver</Text>
         </Pressable>
-        <Text style={styles.title}>Tu firmamento {year}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Tu firmamento</Text>
+          <AnimatedPressable
+            onPress={() => setPickerOpen(true)}
+            style={styles.yearButton}
+          >
+            <Text style={styles.yearButtonText}>{year} ▾</Text>
+          </AnimatedPressable>
+        </View>
         <Text style={styles.subtitle}>
           {entries === null
             ? 'Cargando…'
@@ -70,6 +93,49 @@ export default function Firmament() {
               }`}
         </Text>
       </View>
+
+      <Modal
+        visible={pickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPickerOpen(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setPickerOpen(false)}
+        >
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <Text style={styles.modalTitle}>Elige un año</Text>
+            <ScrollView style={styles.modalList}>
+              {yearOptions.map((y) => {
+                const selected = y === year;
+                return (
+                  <AnimatedPressable
+                    key={y}
+                    onPress={() => {
+                      setYear(y);
+                      setPickerOpen(false);
+                    }}
+                    style={[
+                      styles.yearOption,
+                      selected && styles.yearOptionSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.yearOptionText,
+                        selected && styles.yearOptionTextSelected,
+                      ]}
+                    >
+                      {y}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {entries === null ? (
         <ActivityIndicator
@@ -125,9 +191,27 @@ const styles = StyleSheet.create({
     color: colors.lavender,
     marginBottom: spacing.md,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   title: {
     ...typography.title,
     color: colors.ivory,
+  },
+  yearButton: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    backgroundColor: colors.surfaceMuted,
+  },
+  yearButtonText: {
+    ...typography.caption,
+    color: colors.gold,
+    fontWeight: '600',
   },
   subtitle: {
     ...typography.caption,
@@ -136,5 +220,46 @@ const styles = StyleSheet.create({
   },
   canvasWrap: {
     alignSelf: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCard: {
+    width: 220,
+    maxHeight: 340,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+  },
+  modalTitle: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.ivory,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  modalList: {
+    flexGrow: 0,
+  },
+  yearOption: {
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  yearOptionSelected: {
+    backgroundColor: colors.surfaceMuted,
+  },
+  yearOptionText: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  yearOptionTextSelected: {
+    color: colors.gold,
+    fontWeight: '600',
   },
 });
