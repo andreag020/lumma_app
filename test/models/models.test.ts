@@ -22,6 +22,8 @@ describe('model row round-trips', () => {
       zodiacSign: 'leo',
       birthDate: null,
       notificationTime: '21:00',
+      moodReminderEnabled: true,
+      moodReminderTime: '20:00',
       language: 'es',
       enabledModules: ['astrology', 'mood'],
       themePreferences: { accent: 'gold' },

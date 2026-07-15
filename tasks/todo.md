@@ -95,12 +95,14 @@ Visualización anual con `@shopify/react-native-skia` (un solo Canvas nativo, no
 - **Verificación:** ✅ `npm run typecheck` limpio (validó la API real de `expo-notifications`: `identifier`, `trigger.channelId`/`DATE`); `npm test` verde — pruebas de `parseTime`, `buildPhraseNotificationContent` y `addDays` (lógica pura, sin el módulo nativo).
 - **Depende de:** T5, T6 · **Archivos:** `src/services/notificationService.ts`, `src/services/notificationText.ts`, `src/core/utils/date.ts`.
 
-### [ ] T11 · Ajustes + privacidad — `M`
-Ajustes: borrar todos los datos (`wipeAllData`), ver qué se guarda, gestionar consentimiento.
-- **Nuevo alcance (a pedido de la usuaria):** además de lo original, esta pantalla debe permitir configurar un **recordatorio de ánimo separado** (hora propia, on/off), independiente del recordatorio de la frase diaria (T10). Usar un canal de Android distinto (p. ej. `daily-mood`) y su propio identificador — no reutilizar `daily-phrase`.
-- **Aceptación:** «borrar mis datos» limpia SQLite y vuelve a onboarding; texto de privacidad visible; consentimiento persistido; recordatorio de ánimo configurable de forma independiente al de la frase diaria.
-- **Verificación:** borrar deja tablas vacías; render de la pantalla; programar/cancelar el recordatorio de ánimo no afecta el de la frase diaria.
-- **Depende de:** T4 · **Archivos:** `app/settings.tsx`.
+### [x] T11 · Ajustes + gestión de cuenta — `M`
+Menú de Ajustes (accesible desde el ícono ⚙ en Home) para gestionar la cuenta local: editar apodo, signo y horario de la lectura diaria, configurar un recordatorio de ánimo independiente, y borrar todos los datos.
+- **Mi cuenta:** editar apodo, signo (chips) y horario de la frase diaria; «Guardar cambios» persiste el perfil y reprograma ambos recordatorios.
+- **Recordatorio de ánimo (a pedido de la usuaria):** on/off + hora propia, independiente del recordatorio de la frase diaria (T10) — canal de Android separado (`daily-mood`, ver `scheduleMoodReminder` en `notificationService.ts`); como es un recordatorio genérico (no depende de contenido por fecha), usa un trigger `DAILY` repetitivo en vez de la ventana móvil de T10.
+- **Privacidad y datos:** texto de qué se guarda (solo en el teléfono); «Borrar todos mis datos» (confirmación nativa) limpia SQLite (`wipeAllData`), el perfil en memoria (`profileStore.clear`) y vuelve a onboarding.
+- **Aceptación:** ✅ «borrar mis datos» limpia SQLite y vuelve a onboarding; texto de privacidad visible; recordatorio de ánimo configurable de forma independiente al de la frase diaria (canal propio, no cancela `daily-phrase`); editar signo/apodo/horario y guardar persiste y reprograma notificaciones.
+- **Verificación:** ✅ `npm run typecheck` limpio (migración v2 de `profile` con las columnas nuevas, tipos de `Profile`/`ProfileRow` actualizados); `npm test` verde (round-trip de `Profile` con los campos de recordatorio de ánimo); verificado visualmente en Expo web + Playwright (edición de signo/horario, toggle de ánimo revelando sus chips, botón de guardado con confirmación «Cambios guardados ✓»). *Nota: la confirmación nativa de «Borrar mis datos» usa `Alert.alert`, que no tiene efecto en el preview web (limitación de `react-native-web`, no de la app) — funciona normalmente en Expo Go.*
+- **Depende de:** T4 · **Archivos:** `app/settings.tsx`, `app/index.tsx` (ícono de acceso), `src/core/constants.ts`, `src/models/profile.ts`, `src/core/db/database.ts` (migración v2), `src/repositories/profileRepository.ts`, `src/stores/profileStore.ts`, `src/services/notificationService.ts`.
 
 ### [ ] T12 · AdMob básico — `S`
 `react-native-google-mobile-ads`: banner discreto en pantallas secundarias. Requiere *dev build* (no Expo Go). Sin interstitials.
@@ -119,6 +121,6 @@ Ajustes: borrar todos los datos (`wipeAllData`), ver qué se guarda, gestionar c
 | 0 Fundaciones | T1–T4 | ✅ **Hecho** | Typecheck + tests verdes, config Expo válida |
 | 1 Ritual básico | T5–T7 | ✅ **Hecho** | Onboarding → astrología + frase diaria |
 | 2 Core | T8–T9 | ✅ **Hecho** | Registro de ánimo → firmamento personal |
-| 3 Retención | T10–T12 | 🚧 T10 hecho | Notificaciones ✅ + privacidad ⏳ + anuncios ⏳ |
+| 3 Retención | T10–T12 | 🚧 T10 y T11 hechos | Notificaciones ✅ + ajustes/cuenta ✅ + anuncios ⏳ |
 
-**Siguiente acción sugerida:** probar en tu teléfono el recorrido completo — onboarding → Home → registrar ánimo → firmamento → permiso de notificación — y confirmar que se ve y se siente bien. Después, según pediste, pasamos a correcciones de UI antes de seguir con T11/T12.
+**Siguiente acción sugerida:** probar en tu teléfono el recorrido completo, incluyendo el nuevo menú de Ajustes (⚙ en Home) — editar signo/apodo/horario, activar el recordatorio de ánimo y confirmar «Borrar mis datos» — y luego seguir con T12 (AdMob) cuando quieras monetizar.

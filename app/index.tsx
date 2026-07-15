@@ -90,6 +90,11 @@ export default function Index() {
               <Text style={styles.sign}>{ZODIAC_LABELS[profile.zodiacSign]}</Text>
             </View>
             <PulsingGlyph symbol={ZODIAC_SYMBOLS[profile.zodiacSign]} />
+            <Link href="/settings" asChild>
+              <AnimatedPressable style={styles.settingsButton}>
+                <Text style={styles.settingsIcon}>{'⚙︎'}</Text>
+              </AnimatedPressable>
+            </Link>
           </View>
         </View>
 
@@ -210,6 +215,20 @@ const styles = StyleSheet.create({
     fontSize: 40,
     color: colors.gold,
     marginLeft: spacing.md,
+  },
+  settingsButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
+  },
+  settingsIcon: {
+    fontSize: 16,
+    color: colors.textSecondary,
   },
   card: {
     backgroundColor: colors.surface,

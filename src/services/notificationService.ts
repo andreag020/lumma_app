@@ -5,10 +5,10 @@ import { getDailyContent } from './contentService';
 import { parseTime, buildPhraseNotificationContent } from './notificationText';
 import { addDays, todayISODate } from '../core/utils/date';
 
-// Canal propio (no "default"): cuando se agregue el recordatorio de ánimo
-// configurable desde Ajustes (tasks/todo.md T11), debe vivir en su propio
-// canal de Android, separado de este.
+// Canal propio (no "default"): el recordatorio de ánimo configurable desde
+// Ajustes (T11) vive en su propio canal de Android, separado de este.
 const PHRASE_CHANNEL_ID = 'daily-phrase';
+const MOOD_CHANNEL_ID = 'daily-mood';
 
 // Una notificación por día (no una repetitiva con texto genérico) — cada
 // una lleva la lectura real del signo para esa fecha, como una entrega de
@@ -42,9 +42,9 @@ async function ensureAndroidChannel(): Promise<void> {
  * usuaria no concede permiso, no hace nada: las notificaciones son un
  * extra, nunca bloquean el uso de la app.
  *
- * Este recordatorio es sobre la frase diaria, no sobre el ánimo — un
- * recordatorio de ánimo aparte se configurará desde Ajustes más adelante
- * (T11) y no debe reutilizar este canal ni cancelar sus notificaciones.
+ * Este recordatorio es sobre la frase diaria, no sobre el ánimo — el
+ * recordatorio de ánimo (ver `scheduleMoodReminder` más abajo) vive en su
+ * propio canal y no se ve afectado por esta reprogramación.
  */
 export async function scheduleDailyPhraseReminder(
   profile: Profile
@@ -101,4 +101,59 @@ export async function scheduleDailyPhraseReminder(
       },
     });
   }
+}
+
+async function ensureAndroidMoodChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(MOOD_CHANNEL_ID, {
+    name: 'Recordatorio de ánimo',
+    importance: Notifications.AndroidImportance.DEFAULT,
+  });
+}
+
+/**
+ * Recordatorio de ánimo (Ajustes → T11): a diferencia de la frase diaria,
+ * no depende de contenido por fecha, así que basta una sola notificación
+ * repetitiva diaria en vez de una ventana móvil. Vive en su propio canal
+ * ('daily-mood'), independiente del de la frase — reprogramarlo nunca
+ * cancela las notificaciones de la frase diaria, ni viceversa.
+ *
+ * Llamar siempre que cambie `moodReminderEnabled` o `moodReminderTime`.
+ * Si está deshabilitado, solo cancela lo que hubiera programado antes.
+ */
+export async function scheduleMoodReminder(profile: Profile): Promise<void> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(
+    scheduled
+      .filter((n) => n.identifier.startsWith(MOOD_CHANNEL_ID))
+      .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier))
+  );
+
+  if (!profile.moodReminderEnabled || !profile.moodReminderTime) return;
+
+  const current = await Notifications.getPermissionsAsync();
+  let status = current.status;
+  if (status !== 'granted') {
+    const requested = await Notifications.requestPermissionsAsync();
+    status = requested.status;
+  }
+  if (status !== 'granted') return;
+
+  await ensureAndroidMoodChannel();
+  const [hour, minute] = parseTime(profile.moodReminderTime);
+
+  await Notifications.scheduleNotificationAsync({
+    identifier: MOOD_CHANNEL_ID,
+    content: {
+      title: 'Tu momento de calma',
+      body: '¿Cómo te sientes hoy? Registra tu ánimo en Lumma.',
+      sound: false,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+      hour,
+      minute,
+      channelId: MOOD_CHANNEL_ID,
+    },
+  });
 }

@@ -8,6 +8,8 @@ interface ProfileState {
   loaded: boolean;
   load: () => Promise<void>;
   save: (profile: Profile) => Promise<void>;
+  /** Limpia el perfil en memoria (usar tras `wipeAllData()`). */
+  clear: () => void;
 }
 
 export const useProfileStore = create<ProfileState>((set) => ({
@@ -23,4 +25,6 @@ export const useProfileStore = create<ProfileState>((set) => ({
     await saveProfile(profile);
     set({ profile, loaded: true });
   },
+
+  clear: () => set({ profile: null, loaded: true }),
 }));

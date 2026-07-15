@@ -12,13 +12,16 @@ export async function saveProfile(profile: Profile): Promise<void> {
   await db.runAsync(
     `INSERT INTO profile
        (user_id_local, nickname, zodiac_sign, birth_date_optional,
-        notification_time, language, enabled_modules, theme_preferences)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        notification_time, mood_reminder_enabled, mood_reminder_time,
+        language, enabled_modules, theme_preferences)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id_local) DO UPDATE SET
        nickname = excluded.nickname,
        zodiac_sign = excluded.zodiac_sign,
        birth_date_optional = excluded.birth_date_optional,
        notification_time = excluded.notification_time,
+       mood_reminder_enabled = excluded.mood_reminder_enabled,
+       mood_reminder_time = excluded.mood_reminder_time,
        language = excluded.language,
        enabled_modules = excluded.enabled_modules,
        theme_preferences = excluded.theme_preferences`,
@@ -28,6 +31,8 @@ export async function saveProfile(profile: Profile): Promise<void> {
       r.zodiac_sign,
       r.birth_date_optional,
       r.notification_time,
+      r.mood_reminder_enabled,
+      r.mood_reminder_time,
       r.language,
       r.enabled_modules,
       r.theme_preferences,
