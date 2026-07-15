@@ -43,7 +43,6 @@ export default function Settings() {
   const [moodEnabled, setMoodEnabled] = useState(false);
   const [moodTime, setMoodTime] = useState('21:00');
   const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   // Precarga el formulario con el perfil actual una vez que llega.
   useEffect(() => {
@@ -81,7 +80,7 @@ export default function Settings() {
           console.warn('No se pudo reprogramar el recordatorio de ánimo', err);
         }),
       ]);
-      setSavedAt(Date.now());
+      router.replace('/');
     } finally {
       setSaving(false);
     }
@@ -119,7 +118,7 @@ export default function Settings() {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.headerRow}>
-              <AnimatedPressable onPress={() => router.back()} style={styles.back}>
+              <AnimatedPressable onPress={() => router.replace('/')} style={styles.back}>
                 <Text style={styles.backText}>{'‹'}</Text>
               </AnimatedPressable>
               <Text style={styles.title}>Ajustes</Text>
@@ -197,9 +196,6 @@ export default function Settings() {
                 {saving ? 'Guardando…' : 'Guardar cambios'}
               </Text>
             </AnimatedPressable>
-            {savedAt !== null && (
-              <Text style={styles.savedText}>Cambios guardados ✓</Text>
-            )}
 
             <Text style={styles.sectionTitle}>Privacidad y datos</Text>
             <Text style={styles.privacy}>
@@ -342,12 +338,6 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontWeight: '600',
     color: colors.background,
-  },
-  savedText: {
-    ...typography.caption,
-    color: colors.lime,
-    textAlign: 'center',
-    marginTop: spacing.sm,
   },
   privacy: {
     ...typography.body,
