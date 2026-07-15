@@ -141,14 +141,18 @@ function skySummary(sky) {
 // Prompt
 // ---------------------------------------------------------------------------
 
+// extendedText queda deshabilitado por ahora: se generaba pero ninguna
+// pantalla lo mostraba (ver DailyContent), así que era gasto de tokens sin
+// uso. Se deja comentado, no borrado, por si se conecta a futuro (p. ej.
+// un "Leer más" en Home).
 const schema = {
   type: 'object',
   properties: {
     shortAstrologyText: { type: 'string' },
     dailyPhrase: { type: 'string' },
-    extendedText: { type: 'string' },
+    // extendedText: { type: 'string' },
   },
-  required: ['shortAstrologyText', 'dailyPhrase', 'extendedText'],
+  required: ['shortAstrologyText', 'dailyPhrase'],
   additionalProperties: false,
 };
 
@@ -175,7 +179,7 @@ const SYSTEM = [
   'para el signo, ancladas en el cielo real.',
   'dailyPhrase: una frase breve y memorable para llevar el día, al estilo',
   'de la máxima final de una columna de horóscopo — no un aforismo vago.',
-  'extendedText: 2–3 frases de lectura ampliada, con más detalle práctico.',
+  // 'extendedText: 2–3 frases de lectura ampliada, con más detalle práctico.',
 ].join(' ');
 
 function dateAt(startISO, offset) {
@@ -260,7 +264,7 @@ for (const req of requests) {
     zodiacSign,
     shortAstrologyText: parsed.shortAstrologyText,
     dailyPhrase: parsed.dailyPhrase,
-    extendedText: parsed.extendedText || null,
+    extendedText: null, // deshabilitado — ver nota junto al schema
   });
 }
 
