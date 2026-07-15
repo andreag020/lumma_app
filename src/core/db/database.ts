@@ -67,6 +67,17 @@ export async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
       PRAGMA user_version = 1;
     `);
   }
+
+  if (currentVersion < 2) {
+    // Recordatorio de ánimo (T11): independiente del de la frase diaria,
+    // apagado por defecto para perfiles ya existentes.
+    await db.execAsync(`
+      ALTER TABLE profile ADD COLUMN mood_reminder_enabled INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE profile ADD COLUMN mood_reminder_time TEXT;
+
+      PRAGMA user_version = 2;
+    `);
+  }
 }
 
 /** Borra todos los datos de la usuaria (ajustes → "borrar mis datos"). */

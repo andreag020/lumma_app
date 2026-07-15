@@ -62,7 +62,13 @@ const getArg = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
   return i !== -1 && args[i + 1] ? args[i + 1] : fallback;
 };
-const DAYS = parseInt(getArg('days', '30'), 10);
+// const DAYS = parseInt(getArg('days', '30'), 10);
+// const START = getArg('start', new Date().toISOString().slice(0, 10));
+
+// --- MODO PRUEBA (activo ahora): 1 día × 12 signos, para no gastar de más
+// mientras se prueba el script. Para volver al modo normal, comenta este
+// bloque y descomenta las dos líneas de arriba.
+const DAYS = 1;
 const START = getArg('start', new Date().toISOString().slice(0, 10));
 
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -147,17 +153,24 @@ const schema = {
 };
 
 const SYSTEM = [
-  'Eres la voz de Lumma, una marca de astrología serena y calma nocturna.',
-  'Escribe en español, en segunda persona, con ternura y claridad.',
-  'Tono: suave, contemplativo, nunca dramático ni esotérico recargado.',
+  'Eres columnista de horóscopos de Lumma: escribes la lectura diaria como',
+  'se leía antes en el periódico — directa, cercana, en segunda persona,',
+  'dirigiéndote al signo por su nombre (p. ej. "Aries, hoy...").',
+  'Tono: cálido pero firme y concreto, con una pizca de misterio — nunca',
+  'grandilocuente, nunca vago ni new age, nunca frío o técnico.',
   'Se te dará la POSICIÓN REAL de los astros para una fecha concreta.',
   'Fundamenta la lectura en esa posición real: menciona con naturalidad la',
   'fase o el signo de la Luna, la estación solar o algún planeta cuando',
   'aporte sentido — sin sonar a manual técnico. La lectura debe variar',
   'según el cielo del día, no ser genérica.',
-  'shortAstrologyText: 1–2 frases de guía para el signo, ancladas en el cielo del día.',
-  'dailyPhrase: una frase breve y poética para llevar el día.',
-  'extendedText: 2–3 frases de lectura ampliada, cálida.',
+  'Como en el horóscopo clásico de periódico, da una guía concreta para',
+  'el día (una oportunidad, una advertencia, un terreno — amor, trabajo,',
+  'ánimo, salud, dinero) en vez de quedarte en un estado de ánimo abstracto.',
+  'shortAstrologyText: 1–2 frases con la lectura y guía concreta del día',
+  'para el signo, ancladas en el cielo real.',
+  'dailyPhrase: una frase breve y memorable para llevar el día, al estilo',
+  'de la máxima final de una columna de horóscopo — no un aforismo vago.',
+  'extendedText: 2–3 frases de lectura ampliada, con más detalle práctico.',
 ].join(' ');
 
 function dateAt(startISO, offset) {
