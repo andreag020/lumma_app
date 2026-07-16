@@ -1,91 +1,25 @@
 import { useState } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  Pressable,
-  FlatList,
-  StyleSheet,
-  type NativeSyntheticEvent,
-  type NativeScrollEvent,
-} from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Modal, View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import { AnimatedPressable } from './AnimatedPressable';
 import { colors, spacing, radius, typography } from '../core/theme/theme';
-
-const ITEM_HEIGHT = 44;
-const VISIBLE_ITEMS = 5;
-const PADDING_ITEMS = Math.floor(VISIBLE_ITEMS / 2);
-const PADDING_TOP = ITEM_HEIGHT * PADDING_ITEMS;
-const WHEEL_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
-
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-interface WheelProps {
-  values: number[];
-  initial: number;
-  onChange: (value: number) => void;
+function timeStringToDate(value: string): Date {
+  const [h, m] = value.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
 }
 
-/** Columna de rueda con snap: se desplaza como un carrete y deja el
- * número elegido dentro de la ventana central marcada. */
-function Wheel({ values, initial, onChange }: WheelProps) {
-  const initialIndex = Math.max(0, values.indexOf(initial));
-
-  function applyOffset(offsetY: number) {
-    const index = Math.round(offsetY / ITEM_HEIGHT);
-    const clamped = Math.max(0, Math.min(values.length - 1, index));
-    onChange(values[clamped]);
-  }
-
-  function handleMomentumEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    applyOffset(e.nativeEvent.contentOffset.y);
-  }
-
-  // En arrastres lentos sin impulso, algunas plataformas no disparan
-  // onMomentumScrollEnd — si la velocidad al soltar es ~0, ya llegó a su
-  // posición final y se puede aplicar aquí mismo, sin esperar el momentum.
-  function handleDragEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    const velocityY = e.nativeEvent.velocity?.y ?? 0;
-    if (Math.abs(velocityY) < 0.05) {
-      applyOffset(e.nativeEvent.contentOffset.y);
-    }
-  }
-
-  return (
-    <FlatList
-      data={values}
-      keyExtractor={(v) => String(v)}
-      showsVerticalScrollIndicator={false}
-      snapToInterval={ITEM_HEIGHT}
-      decelerationRate="fast"
-      // El offset que necesita `initialScrollIndex` para CENTRAR el ítem
-      // en la ventana de selección es índice×alto (el padding superior ya
-      // se cancela con el centrado — ver nota en el commit). No es la
-      // posición física real dentro del contenido con padding, pero es lo
-      // único que usamos de este prop.
-      getItemLayout={(_, index) => ({
-        length: ITEM_HEIGHT,
-        offset: ITEM_HEIGHT * index,
-        index,
-      })}
-      initialScrollIndex={initialIndex}
-      contentContainerStyle={{ paddingVertical: PADDING_TOP }}
-      onMomentumScrollEnd={handleMomentumEnd}
-      onScrollEndDrag={handleDragEnd}
-      style={styles.wheel}
-      renderItem={({ item }) => (
-        <View style={styles.wheelItem}>
-          <Text style={styles.wheelItemText}>{pad2(item)}</Text>
-        </View>
-      )}
-    />
-  );
+function dateToTimeString(d: Date): string {
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
 interface TimePickerFieldProps {
@@ -94,24 +28,50 @@ interface TimePickerFieldProps {
 }
 
 /**
- * Selector de hora libre con diseño propio (dos ruedas, hora y minuto,
- * con la estética nocturna de Lumma) — no el picker del sistema
- * operativo, que rompía con el resto de la interfaz.
+ * Selector de hora con el picker nativo del sistema (rueda tipo
+ * "spinner" de toda la vida, no el reloj/calendario de Material 3 que
+ * no encajaba con la estética de Lumma) — se probó antes un selector
+ * propio hecho con FlatList, pero el gesto de arrastre no llegaba a
+ * reconocerse de forma confiable en dispositivo real. El picker nativo
+ * resuelve eso porque el arrastre lo maneja el sistema operativo, no
+ * JavaScript.
+ *
+ * En iOS se muestra embebido dentro de una tarjeta propia (con la
+ * paleta oscura de Lumma). En Android el sistema solo permite mostrarlo
+ * como diálogo nativo (API imperativa) — no se puede incrustar dentro
+ * de una tarjeta propia — así que se abre directamente al tocar el
+ * botón, sin envoltorio propio.
  */
 export function TimePickerField({ value, onChange }: TimePickerFieldProps) {
   const [visible, setVisible] = useState(false);
-  const [hour, minute] = value.split(':').map(Number);
-  const [draftHour, setDraftHour] = useState(hour);
-  const [draftMinute, setDraftMinute] = useState(minute);
+  const [draftDate, setDraftDate] = useState<Date>(() => timeStringToDate(value));
 
   function openPicker() {
-    setDraftHour(hour);
-    setDraftMinute(minute);
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: timeStringToDate(value),
+        mode: 'time',
+        is24Hour: true,
+        // `design: 'default'` mantiene el picker "spinner" clásico (rueda
+        // de números) en vez del reloj/calendario de Material 3.
+        design: 'default',
+        display: 'spinner',
+        onChange: (event, selected) => {
+          if (event.type === 'set' && selected) onChange(dateToTimeString(selected));
+        },
+      });
+      return;
+    }
+    setDraftDate(timeStringToDate(value));
     setVisible(true);
   }
 
+  function handleIOSChange(_event: DateTimePickerEvent, selected?: Date) {
+    if (selected) setDraftDate(selected);
+  }
+
   function confirm() {
-    onChange(`${pad2(draftHour)}:${pad2(draftMinute)}`);
+    onChange(dateToTimeString(draftDate));
     setVisible(false);
   }
 
@@ -121,38 +81,34 @@ export function TimePickerField({ value, onChange }: TimePickerFieldProps) {
         <Text style={styles.buttonText}>{value}</Text>
       </AnimatedPressable>
 
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setVisible(false)}
-      >
-        {/* Se monta de cero cada vez que se abre (no solo se oculta), así
-            las ruedas siempre arrancan centradas en el valor actual —
-            nunca donde quedaron la última vez que se cerró sin confirmar.
-            El Modal de React Native abre su propia raíz nativa, separada
-            del GestureHandlerRootView de la app — sin este envoltorio
-            propio, los gestos de arrastre de las ruedas no llegan a
-            reconocerse y la rueda se queda estática. */}
-        {visible && (
-          <GestureHandlerRootView style={styles.gestureRoot}>
+      {Platform.OS === 'ios' && (
+        <Modal
+          visible={visible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setVisible(false)}
+        >
+          {visible && (
             <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
               <Pressable style={styles.card} onPress={() => {}}>
                 <Text style={styles.cardTitle}>Elige la hora</Text>
-                <View style={styles.wheelRow}>
-                  <View style={styles.selectionWindow} pointerEvents="none" />
-                  <Wheel values={HOURS} initial={draftHour} onChange={setDraftHour} />
-                  <Text style={styles.colon}>:</Text>
-                  <Wheel values={MINUTES} initial={draftMinute} onChange={setDraftMinute} />
-                </View>
+                <DateTimePicker
+                  value={draftDate}
+                  mode="time"
+                  display="spinner"
+                  themeVariant="dark"
+                  locale="es-ES"
+                  onChange={handleIOSChange}
+                  style={styles.picker}
+                />
                 <AnimatedPressable onPress={confirm} style={styles.confirmButton}>
                   <Text style={styles.confirmButtonText}>Listo</Text>
                 </AnimatedPressable>
               </Pressable>
             </Pressable>
-          </GestureHandlerRootView>
-        )}
-      </Modal>
+          )}
+        </Modal>
+      )}
     </View>
   );
 }
@@ -173,9 +129,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.gold,
   },
-  gestureRoot: {
-    flex: 1,
-  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -183,7 +136,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   card: {
-    width: 260,
+    width: 280,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -197,42 +150,9 @@ const styles = StyleSheet.create({
     color: colors.ivory,
     marginBottom: spacing.md,
   },
-  wheelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: WHEEL_HEIGHT,
-    width: '100%',
-  },
-  selectionWindow: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: PADDING_TOP,
-    height: ITEM_HEIGHT,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.gold,
-    backgroundColor: 'rgba(229, 196, 107, 0.08)',
-  },
-  wheel: {
-    height: WHEEL_HEIGHT,
-    width: 64,
-  },
-  wheelItem: {
-    height: ITEM_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  wheelItemText: {
-    ...typography.body,
-    fontSize: 20,
-    color: colors.ivory,
-  },
-  colon: {
-    ...typography.title,
-    color: colors.ivory,
-    marginHorizontal: spacing.xs,
+  picker: {
+    width: 240,
+    height: 180,
   },
   confirmButton: {
     marginTop: spacing.lg,
