@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import mobileAds, { AdsConsent, TestIds } from 'react-native-google-mobile-ads';
 import { getAdsConfig } from '../repositories/adsRepository';
@@ -11,17 +12,20 @@ function isExpoGo(): boolean {
   return Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 }
 
-/**
- * ⚠️ ID de prueba público de Google (el mismo que usan todos sus ejemplos
- * de AdMob) — sirve para desarrollar sin arriesgar la cuenta real, pero
- * hay que reemplazarlo por el ID de unidad de anuncio real de Lumma antes
- * de publicar. Ver también los `androidAppId`/`iosAppId` de prueba en
- * `app.json` (mismo reemplazo pendiente).
- */
-const PRODUCTION_BANNER_AD_UNIT_ID = 'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyy';
+// ID real de la unidad de anuncio banner de Lumma en AdMob (Android).
+const PRODUCTION_BANNER_AD_UNIT_ID_ANDROID = 'ca-app-pub-2316901851284710/5928564773';
+
+// ⚠️ Todavía no existe una app de Lumma para iOS en AdMob (solo se creó la
+// de Android) — este sigue siendo el ID de prueba público de Google.
+// Cuando crees la app de iOS en AdMob y su unidad de banner, reemplázalo
+// aquí (y el `iosAppId` en app.json) antes de publicar en la App Store.
+const PRODUCTION_BANNER_AD_UNIT_ID_IOS = 'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyy';
 
 export function getBannerAdUnitId(): string {
-  return __DEV__ ? TestIds.ADAPTIVE_BANNER : PRODUCTION_BANNER_AD_UNIT_ID;
+  if (__DEV__) return TestIds.ADAPTIVE_BANNER;
+  return Platform.OS === 'ios'
+    ? PRODUCTION_BANNER_AD_UNIT_ID_IOS
+    : PRODUCTION_BANNER_AD_UNIT_ID_ANDROID;
 }
 
 /**
