@@ -5,14 +5,20 @@ import {
   getContent,
   getContentForSign,
 } from '../repositories/contentRepository';
-import type { DailyContent, ZodiacSign } from '../models';
+import type { DailyContent, Language, ZodiacSign } from '../models';
+import { DEFAULT_LANGUAGE } from '../models';
 import { dayOfYear, todayISODate } from '../core/utils/date';
 // Contenido empaquetado como asset (generado offline por lotes con Claude
 // Haiku 4.5; ver scripts/generate-content.mjs). Respaldo para el primer
 // arranque sin red — nunca llama a la API en runtime.
 import bundledContent from '../../assets/content/content.json';
 
-const CONTENT = bundledContent as DailyContent[];
+// El asset embebido puede venir de una generación previa a la distribución
+// multi-idioma (sin campo `language`): se asume español, que es el único
+// idioma en el que se generó contenido hasta ahora.
+const CONTENT = (bundledContent as Array<Partial<DailyContent>>).map(
+  (item) => ({ language: DEFAULT_LANGUAGE, ...item })
+) as DailyContent[];
 
 /** Siembra el contenido empaquetado en SQLite si aún no está cargado.
  * Idempotente: se puede llamar en cada arranque. */
@@ -66,22 +72,31 @@ export async function refreshRemoteContent(): Promise<void> {
 }
 
 /**
- * Devuelve el contenido del día para un signo.
- * 1) Coincidencia exacta de fecha.
+ * Devuelve el contenido del día para un signo e idioma.
+ * 1) Coincidencia exacta de fecha (en el idioma pedido).
  * 2) Respaldo determinista: rota entre el contenido disponible del signo
- *    según el día del año, para que siempre haya algo que mostrar aunque
- *    el contenido empaquetado no cubra la fecha de hoy.
+ *    en ese idioma según el día del año, para que siempre haya algo que
+ *    mostrar aunque el contenido empaquetado no cubra la fecha de hoy.
+ * 3) Si el idioma pedido aún no tiene contenido generado (p. ej. inglés
+ *    recién habilitado, a la espera del próximo lote semanal), se cae de
+ *    vuelta al español antes que mostrar la pantalla vacía.
  */
 export async function getDailyContent(
   date: string,
-  sign: ZodiacSign
+  sign: ZodiacSign,
+  language: Language
 ): Promise<DailyContent | null> {
-  const exact = await getContent(date, sign);
+  const exact = await getContent(date, sign, language);
   if (exact) return exact;
 
-  const forSign = await getContentForSign(sign);
-  if (forSign.length === 0) return null;
+  const forSign = await getContentForSign(sign, language);
+  if (forSign.length > 0) {
+    const index = dayOfYear(date) % forSign.length;
+    return forSign[index];
+  }
 
-  const index = dayOfYear(date) % forSign.length;
-  return forSign[index];
+  if (language !== DEFAULT_LANGUAGE) {
+    return getDailyContent(date, sign, DEFAULT_LANGUAGE);
+  }
+  return null;
 }

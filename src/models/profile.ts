@@ -1,4 +1,5 @@
 import type { ZodiacSign } from './zodiac';
+import type { Language } from './language';
 
 /** Perfil local de la usuaria (sin cuenta). Vive solo en el dispositivo. */
 export interface Profile {
@@ -11,7 +12,7 @@ export interface Profile {
   /** Recordatorio de ánimo, independiente del de la frase diaria (T11). */
   moodReminderEnabled: boolean;
   moodReminderTime: string | null; // "HH:mm"
-  language: string; // p. ej. "es"
+  language: Language;
   enabledModules: string[]; // módulos activos
   themePreferences: Record<string, unknown>;
 }
@@ -54,7 +55,7 @@ export function profileFromRow(r: ProfileRow): Profile {
     notificationTime: r.notification_time,
     moodReminderEnabled: r.mood_reminder_enabled === 1,
     moodReminderTime: r.mood_reminder_time,
-    language: r.language,
+    language: r.language as Language,
     enabledModules: JSON.parse(r.enabled_modules) as string[],
     themePreferences: JSON.parse(r.theme_preferences) as Record<string, unknown>,
   };

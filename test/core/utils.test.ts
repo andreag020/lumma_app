@@ -1,5 +1,5 @@
 import { generateLocalId } from '../../src/core/utils/id';
-import { todayISODate, addDays, formatLongDateEs } from '../../src/core/utils/date';
+import { todayISODate, addDays, formatLongDate } from '../../src/core/utils/date';
 
 describe('generateLocalId', () => {
   test('includes the given prefix and produces unique values', () => {
@@ -38,16 +38,24 @@ describe('addDays', () => {
   });
 });
 
-describe('formatLongDateEs', () => {
+describe('formatLongDate', () => {
   test('formats a date in long Spanish form', () => {
-    expect(formatLongDateEs('2026-07-15')).toBe('15 de julio de 2026');
+    expect(formatLongDate('2026-07-15', 'es')).toBe('15 de julio de 2026');
   });
 
-  test('does not zero-pad the day', () => {
-    expect(formatLongDateEs('2026-01-05')).toBe('5 de enero de 2026');
+  test('does not zero-pad the day (es)', () => {
+    expect(formatLongDate('2026-01-05', 'es')).toBe('5 de enero de 2026');
   });
 
-  test('handles December correctly', () => {
-    expect(formatLongDateEs('2026-12-31')).toBe('31 de diciembre de 2026');
+  test('handles December correctly (es)', () => {
+    expect(formatLongDate('2026-12-31', 'es')).toBe('31 de diciembre de 2026');
+  });
+
+  test('formats a date in long English form', () => {
+    expect(formatLongDate('2026-07-15', 'en')).toBe('July 15, 2026');
+  });
+
+  test('handles December correctly (en)', () => {
+    expect(formatLongDate('2026-12-31', 'en')).toBe('December 31, 2026');
   });
 });
