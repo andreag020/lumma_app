@@ -1,9 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import {
   Canvas,
   Circle,
   Line,
+  Group,
   BlurMask,
   LinearGradient,
   Rect,
@@ -16,6 +17,7 @@ import {
   withSequence,
   withTiming,
   withDelay,
+  runOnJS,
   Easing,
 } from 'react-native-reanimated';
 import { colors } from '../core/theme/theme';
@@ -35,23 +37,8 @@ interface LightSpec {
   twinkleDelay: number;
 }
 
-interface ConstellationPair {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-}
-
 // Solo acentos de luz de la paleta de marca — nunca colores nuevos.
 const LIGHT_COLORS = [colors.gold, colors.lavender, colors.lime, colors.ivory];
-
-// Máximo de líneas simultáneas: da la sensación de constelación sin
-// convertirse en una telaraña que compita con las luces.
-const MAX_CONSTELLATION_LINES = 6;
-
-function connectionThreshold(width: number, height: number): number {
-  return Math.min(width, height) * 0.32;
-}
 
 function makeLights(width: number, height: number, count: number): LightSpec[] {
   const lights: LightSpec[] = [];
@@ -78,37 +65,6 @@ function makeLights(width: number, height: number, count: number): LightSpec[] {
     });
   }
   return lights;
-}
-
-/** Pares de luces cercanas (por posición base) para dibujar líneas de
- * constelación entre ellas. Se limita a las más cercanas para que el
- * efecto siga siendo discreto. Determinista una vez generado. */
-function makeConstellationPairs(
-  lights: LightSpec[],
-  width: number,
-  height: number
-): ConstellationPair[] {
-  const maxDist = connectionThreshold(width, height);
-  const candidates: { dist: number; pair: ConstellationPair }[] = [];
-
-  for (let i = 0; i < lights.length; i++) {
-    for (let j = i + 1; j < lights.length; j++) {
-      const a = lights[i];
-      const b = lights[j];
-      const dx = a.baseX - b.baseX;
-      const dy = a.baseY - b.baseY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist <= maxDist) {
-        candidates.push({
-          dist,
-          pair: { x1: a.baseX, y1: a.baseY, x2: b.baseX, y2: b.baseY },
-        });
-      }
-    }
-  }
-
-  candidates.sort((a, b) => a.dist - b.dist);
-  return candidates.slice(0, MAX_CONSTELLATION_LINES).map((c) => c.pair);
 }
 
 function FloatingLight({ light }: { light: LightSpec }) {
@@ -182,47 +138,136 @@ function FloatingLight({ light }: { light: LightSpec }) {
   );
 }
 
-/** Línea fina entre dos luces cercanas, que aparece, se sostiene y se
- * desvanece en un ciclo propio — como constelaciones que se dibujan y
- * se borran solas en el cielo. */
-function ConstellationLine({ pair }: { pair: ConstellationPair }) {
-  const progress = useSharedValue(0);
+interface ConstellationPoint {
+  dx: number;
+  dy: number;
+}
+
+interface ConstellationSpec {
+  centerX: number;
+  centerY: number;
+  points: ConstellationPoint[];
+  driftX: number;
+  driftY: number;
+  driftDurationX: number;
+  driftDurationY: number;
+}
+
+/** Una constelación nueva: entre 1 y 4 puntos encadenados cerca uno del
+ * otro (siempre conectados por al menos un camino), en una posición
+ * aleatoria de la pantalla. */
+function makeConstellationSpec(width: number, height: number): ConstellationSpec {
+  const pointCount = 1 + Math.floor(Math.random() * 4); // 1..4
+  const margin = 50;
+  const centerX = margin + Math.random() * Math.max(1, width - margin * 2);
+  const centerY = margin + Math.random() * Math.max(1, height - margin * 2);
+
+  const points: ConstellationPoint[] = [{ dx: 0, dy: 0 }];
+  for (let i = 1; i < pointCount; i++) {
+    const prev = points[i - 1];
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 22 + Math.random() * 34;
+    points.push({
+      dx: prev.dx + Math.cos(angle) * dist,
+      dy: prev.dy + Math.sin(angle) * dist,
+    });
+  }
+
+  return {
+    centerX,
+    centerY,
+    points,
+    driftX: 8 + Math.random() * 16,
+    driftY: 6 + Math.random() * 12,
+    driftDurationX: 5000 + Math.random() * 3500,
+    driftDurationY: 5800 + Math.random() * 3800,
+  };
+}
+
+/**
+ * Un grupo de 1–4 puntos, siempre conectados entre sí, que aparece en una
+ * posición aleatoria, se mueve como un solo cuerpo (conserva su forma) y
+ * se desvanece — al terminar su ciclo, avisa al padre para que aparezca
+ * otra constelación distinta en otro lugar.
+ */
+function ConstellationGroup({
+  width,
+  height,
+  onCycleEnd,
+}: {
+  width: number;
+  height: number;
+  onCycleEnd: () => void;
+}) {
+  const spec = useMemo(() => makeConstellationSpec(width, height), [width, height]);
+  const opacity = useSharedValue(0);
+  const driftProgressX = useSharedValue(0);
+  const driftProgressY = useSharedValue(0);
 
   useEffect(() => {
-    const fadeIn = 1400 + Math.random() * 1200;
-    const hold = 900 + Math.random() * 1400;
-    const fadeOut = 1600 + Math.random() * 1400;
-    const gap = 2200 + Math.random() * 3200;
-    const startDelay = Math.random() * 4000;
+    driftProgressX.value = withRepeat(
+      withTiming(1, { duration: spec.driftDurationX, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true
+    );
+    driftProgressY.value = withRepeat(
+      withTiming(1, { duration: spec.driftDurationY, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true
+    );
 
-    progress.value = withDelay(
+    const fadeIn = 1800 + Math.random() * 1200;
+    const hold = 2400 + Math.random() * 2400;
+    const fadeOut = 2000 + Math.random() * 1400;
+    const startDelay = Math.random() * 3000;
+
+    opacity.value = withDelay(
       startDelay,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: fadeIn, easing: Easing.out(Easing.quad) }),
-          withTiming(1, { duration: hold }),
-          withTiming(0, { duration: fadeOut, easing: Easing.in(Easing.quad) }),
-          withTiming(0, { duration: gap })
-        ),
-        -1,
-        false
+      withSequence(
+        withTiming(1, { duration: fadeIn, easing: Easing.out(Easing.quad) }),
+        withTiming(1, { duration: hold }),
+        withTiming(0, { duration: fadeOut, easing: Easing.in(Easing.quad) }, (finished) => {
+          if (finished) runOnJS(onCycleEnd)();
+        })
       )
     );
+    // Cada instancia vive un solo ciclo (aparece → se sostiene →
+    // desaparece); el padre la reemplaza por una nueva al terminar.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sutil: la línea acompaña a las luces que conecta, nunca compite con ellas.
-  const opacity = useDerivedValue(() => progress.value * 0.4);
+  const transform = useDerivedValue(() => [
+    { translateX: spec.centerX + driftProgressX.value * spec.driftX },
+    { translateY: spec.centerY - driftProgressY.value * spec.driftY },
+  ]);
+  const groupOpacity = useDerivedValue(() => opacity.value * 0.55);
 
   return (
-    <Line
-      p1={vec(pair.x1, pair.y1)}
-      p2={vec(pair.x2, pair.y2)}
-      color={colors.constellationLine}
-      strokeWidth={0.6}
-      opacity={opacity}
-    />
+    <Group transform={transform} opacity={groupOpacity}>
+      {spec.points.slice(1).map((p, i) => (
+        <Line
+          key={`seg-${i}`}
+          p1={vec(spec.points[i].dx, spec.points[i].dy)}
+          p2={vec(p.dx, p.dy)}
+          color={colors.constellationLine}
+          strokeWidth={0.7}
+        />
+      ))}
+      {spec.points.map((p, i) => (
+        <Circle key={`pt-${i}`} cx={p.dx} cy={p.dy} r={1.7} color={colors.ivory}>
+          <BlurMask blur={1.1} style="normal" />
+        </Circle>
+      ))}
+    </Group>
   );
+}
+
+// Constelaciones activas al mismo tiempo: unas pocas, para que el efecto
+// siga siendo discreto y no se sienta como una lluvia constante.
+const CONSTELLATION_SLOTS = 3;
+
+function makeSlotKeys(): number[] {
+  return Array.from({ length: CONSTELLATION_SLOTS }, () => Math.random());
 }
 
 interface AmbientSkyProps {
@@ -232,10 +277,11 @@ interface AmbientSkyProps {
 
 /**
  * Fondo ambiental decorativo: degradado nocturno sutil + luces flotantes
- * tipo luciérnaga/estrella que titilan de forma independiente + líneas
- * finas de constelación que conectan luces cercanas y se desvanecen solas.
- * Se coloca detrás del contenido de la pantalla (absolute, sin capturar
- * toques). El firmamento (T9) no la usa — ya es su propio cielo.
+ * tipo luciérnaga/estrella que titilan de forma independiente + pequeñas
+ * constelaciones (1–4 puntos siempre conectados) que aparecen en
+ * posiciones aleatorias, se mueven juntas y se desvanecen para dar paso a
+ * otras. Se coloca detrás del contenido de la pantalla (absolute, sin
+ * capturar toques). El firmamento (T9) no la usa — ya es su propio cielo.
  */
 export function AmbientSky({ density = 14 }: AmbientSkyProps) {
   const { width, height } = useWindowDimensions();
@@ -243,10 +289,15 @@ export function AmbientSky({ density = 14 }: AmbientSkyProps) {
     () => makeLights(width, height, density),
     [width, height, density]
   );
-  const constellationPairs = useMemo(
-    () => makeConstellationPairs(lights, width, height),
-    [lights, width, height]
-  );
+  const [slotKeys, setSlotKeys] = useState<number[]>(makeSlotKeys);
+
+  function respawnSlot(index: number) {
+    setSlotKeys((prev) => {
+      const next = [...prev];
+      next[index] = Math.random();
+      return next;
+    });
+  }
 
   if (width === 0 || height === 0) return null;
 
@@ -260,8 +311,13 @@ export function AmbientSky({ density = 14 }: AmbientSkyProps) {
             colors={[colors.background, colors.surfaceMuted, colors.background]}
           />
         </Rect>
-        {constellationPairs.map((pair, i) => (
-          <ConstellationLine key={`line-${i}`} pair={pair} />
+        {slotKeys.map((key, i) => (
+          <ConstellationGroup
+            key={key}
+            width={width}
+            height={height}
+            onCycleEnd={() => respawnSlot(i)}
+          />
         ))}
         {lights.map((light, i) => (
           <FloatingLight key={i} light={light} />
