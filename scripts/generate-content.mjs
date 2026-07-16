@@ -62,13 +62,7 @@ const getArg = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
   return i !== -1 && args[i + 1] ? args[i + 1] : fallback;
 };
-// const DAYS = parseInt(getArg('days', '30'), 10);
-// const START = getArg('start', new Date().toISOString().slice(0, 10));
-
-// --- MODO PRUEBA (activo ahora): 1 día × 12 signos, para no gastar de más
-// mientras se prueba el script. Para volver al modo normal, comenta este
-// bloque y descomenta las dos líneas de arriba.
-const DAYS = 1;
+const DAYS = parseInt(getArg('days', '30'), 10);
 const START = getArg('start', new Date().toISOString().slice(0, 10));
 
 if (!process.env.ANTHROPIC_API_KEY) {
