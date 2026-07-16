@@ -9,6 +9,7 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AnimatedPressable } from './AnimatedPressable';
 import { colors, spacing, radius, typography } from '../core/theme/theme';
 
@@ -128,22 +129,28 @@ export function TimePickerField({ value, onChange }: TimePickerFieldProps) {
       >
         {/* Se monta de cero cada vez que se abre (no solo se oculta), así
             las ruedas siempre arrancan centradas en el valor actual —
-            nunca donde quedaron la última vez que se cerró sin confirmar. */}
+            nunca donde quedaron la última vez que se cerró sin confirmar.
+            El Modal de React Native abre su propia raíz nativa, separada
+            del GestureHandlerRootView de la app — sin este envoltorio
+            propio, los gestos de arrastre de las ruedas no llegan a
+            reconocerse y la rueda se queda estática. */}
         {visible && (
-          <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
-            <Pressable style={styles.card} onPress={() => {}}>
-              <Text style={styles.cardTitle}>Elige la hora</Text>
-              <View style={styles.wheelRow}>
-                <View style={styles.selectionWindow} pointerEvents="none" />
-                <Wheel values={HOURS} initial={draftHour} onChange={setDraftHour} />
-                <Text style={styles.colon}>:</Text>
-                <Wheel values={MINUTES} initial={draftMinute} onChange={setDraftMinute} />
-              </View>
-              <AnimatedPressable onPress={confirm} style={styles.confirmButton}>
-                <Text style={styles.confirmButtonText}>Listo</Text>
-              </AnimatedPressable>
+          <GestureHandlerRootView style={styles.gestureRoot}>
+            <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
+              <Pressable style={styles.card} onPress={() => {}}>
+                <Text style={styles.cardTitle}>Elige la hora</Text>
+                <View style={styles.wheelRow}>
+                  <View style={styles.selectionWindow} pointerEvents="none" />
+                  <Wheel values={HOURS} initial={draftHour} onChange={setDraftHour} />
+                  <Text style={styles.colon}>:</Text>
+                  <Wheel values={MINUTES} initial={draftMinute} onChange={setDraftMinute} />
+                </View>
+                <AnimatedPressable onPress={confirm} style={styles.confirmButton}>
+                  <Text style={styles.confirmButtonText}>Listo</Text>
+                </AnimatedPressable>
+              </Pressable>
             </Pressable>
-          </Pressable>
+          </GestureHandlerRootView>
         )}
       </Modal>
     </View>
@@ -165,6 +172,9 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontWeight: '600',
     color: colors.gold,
+  },
+  gestureRoot: {
+    flex: 1,
   },
   overlay: {
     flex: 1,
