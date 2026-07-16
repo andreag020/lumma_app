@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, LogBox } from 'react-native';
+import { ActivityIndicator, StyleSheet, LogBox } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -45,23 +46,25 @@ export default function RootLayout() {
 
   if (!ready) {
     return (
-      <View style={styles.loading}>
+      <GestureHandlerRootView style={styles.loading}>
         <ActivityIndicator color={colors.gold} />
-      </View>
+      </GestureHandlerRootView>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
-          animation: 'fade',
-        }}
-      />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+            animation: 'fade',
+          }}
+        />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
