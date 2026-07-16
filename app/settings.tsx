@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useProfileStore } from '../src/stores/profileStore';
+import { useThemeStore } from '../src/stores/themeStore';
 import { wipeAllData } from '../src/core/db/database';
 import {
   scheduleDailyPhraseReminder,
@@ -30,8 +31,15 @@ import {
   type Profile,
   type Language,
 } from '../src/models';
-import { colors, spacing, radius, typography } from '../src/core/theme/theme';
+import { useTheme } from '../src/core/theme/useTheme';
+import { THEMES, type ThemeId } from '../src/core/theme/theme';
 import { useTranslation } from '../src/core/i18n/useTranslation';
+import type {
+  ThemeColors,
+  Typography,
+  SpacingTokens,
+  RadiusTokens,
+} from '../src/core/theme/theme';
 
 /** Ajustes: gestionar la cuenta local (apodo, signo, horarios de
  * recordatorio) y privacidad (qué se guarda, borrar todos los datos). */
@@ -39,6 +47,18 @@ export default function Settings() {
   const profile = useProfileStore((s) => s.profile);
   const save = useProfileStore((s) => s.save);
   const clear = useProfileStore((s) => s.clear);
+
+  const selectedThemeId = useThemeStore((s) => s.selectedThemeId);
+  const themeUnlocked = useThemeStore((s) => s.unlocked);
+  const selectTheme = useThemeStore((s) => s.selectTheme);
+  const devUnlock = useThemeStore((s) => s.devUnlock);
+  const devLock = useThemeStore((s) => s.devLock);
+
+  const { colors, spacing, radius, typography } = useTheme();
+  const styles = useMemo(
+    () => makeStyles(colors, spacing, radius, typography),
+    [colors, spacing, radius, typography]
+  );
 
   const [nickname, setNickname] = useState('');
   const [sign, setSign] = useState<ZodiacSign | null>(null);
@@ -91,6 +111,22 @@ export default function Settings() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleThemePress(id: ThemeId) {
+    const theme = THEMES[id];
+    if (theme.free || themeUnlocked) {
+      selectTheme(id);
+      return;
+    }
+    Alert.alert(
+      'Desbloquear temas',
+      'Un solo pago único desbloquea los 4 temas visuales y quita los anuncios.\n\n(Marcador de prueba: todavía no está conectado a un cobro real de Play Store.)',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Simular compra — $2', onPress: () => devUnlock() },
+      ]
+    );
   }
 
   function handleWipe() {
@@ -224,8 +260,58 @@ export default function Settings() {
               </Text>
             </AnimatedPressable>
 
+            <Text style={styles.sectionTitle}>Apariencia</Text>
+            <Text style={styles.privacy}>
+              {themeUnlocked
+                ? 'Ya tienes los temas desbloqueados y los anuncios quitados. Elige el que más te guste.'
+                : 'Índigo Nocturno viene incluido. Un solo pago único desbloquea los otros 3 temas y quita los anuncios.'}
+            </Text>
+            <View style={styles.themeGrid}>
+              {Object.values(THEMES).map((theme) => {
+                const selected = theme.id === selectedThemeId;
+                const locked = !theme.free && !themeUnlocked;
+                return (
+                  <AnimatedPressable
+                    key={theme.id}
+                    onPress={() => handleThemePress(theme.id)}
+                    style={[styles.themeCard, selected && styles.themeCardSelected]}
+                  >
+                    <View style={styles.themeSwatchRow}>
+                      <View style={[styles.themeSwatch, { backgroundColor: theme.colors.gold }]} />
+                      <View
+                        style={[
+                          styles.themeSwatch,
+                          styles.themeSwatchOverlap,
+                          { backgroundColor: theme.colors.lime },
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.themeSwatch,
+                          styles.themeSwatchOverlap,
+                          { backgroundColor: theme.colors.lavender },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.themeName}>{theme.name}</Text>
+                    <Text style={styles.themeTag}>
+                      {selected ? 'Actual' : locked ? `🔒 ${theme.tag}` : theme.tag}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </View>
+            {themeUnlocked && (
+              <AnimatedPressable onPress={() => devLock()} style={styles.themeResetLink}>
+                <Text style={styles.themeResetLinkText}>
+                  Volver a bloquear los temas (solo pruebas)
+                </Text>
+              </AnimatedPressable>
+            )}
+
             <Text style={styles.sectionTitle}>{t('sectionPrivacy')}</Text>
             <Text style={styles.privacy}>{t('privacyBody')}</Text>
+
             <AnimatedPressable onPress={handleWipe} style={styles.danger}>
               <Text style={styles.dangerText}>{t('wipeButton')}</Text>
             </AnimatedPressable>
@@ -237,7 +323,13 @@ export default function Settings() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  colors: ThemeColors,
+  spacing: SpacingTokens,
+  radius: RadiusTokens,
+  typography: Typography
+) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
@@ -382,4 +474,56 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#E55A5A',
   },
-});
+  themeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  themeCard: {
+    width: 132,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+  },
+  themeCardSelected: {
+    borderColor: colors.gold,
+    backgroundColor: colors.surfaceMuted,
+  },
+  themeSwatchRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+  },
+  themeSwatch: {
+    width: 22,
+    height: 22,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    borderColor: colors.surface,
+  },
+  themeSwatchOverlap: {
+    marginLeft: -8,
+  },
+  themeName: {
+    ...typography.body,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.ivory,
+  },
+  themeTag: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  themeResetLink: {
+    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  themeResetLinkText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textDecorationLine: 'underline',
+  },
+  });
+}

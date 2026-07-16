@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -22,9 +22,15 @@ import {
   type ZodiacSign,
   type Language,
 } from '../src/models';
-import { colors, spacing, radius, typography } from '../src/core/theme/theme';
+import { useTheme } from '../src/core/theme/useTheme';
 import { useTranslation } from '../src/core/i18n/useTranslation';
 import { detectDeviceLanguage } from '../src/core/i18n/device';
+import type {
+  ThemeColors,
+  Typography,
+  SpacingTokens,
+  RadiusTokens,
+} from '../src/core/theme/theme';
 
 const DEFAULT_MODULES = ['astrology', 'mood', 'firmament'];
 
@@ -38,6 +44,12 @@ export default function Onboarding() {
   // cambiar aquí mismo; a partir de "Comenzar mi ritual" vive en el perfil.
   const [language, setLanguage] = useState<Language>(() => detectDeviceLanguage());
   const { t } = useTranslation(language);
+
+  const { colors, spacing, radius, typography } = useTheme();
+  const styles = useMemo(
+    () => makeStyles(colors, spacing, radius, typography),
+    [colors, spacing, radius, typography]
+  );
 
   const canContinue = sign !== null && !saving;
 
@@ -166,7 +178,13 @@ export default function Onboarding() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  colors: ThemeColors,
+  spacing: SpacingTokens,
+  radius: RadiusTokens,
+  typography: Typography
+) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
@@ -295,4 +313,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.background,
   },
-});
+  });
+}

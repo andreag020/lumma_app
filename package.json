@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo-google-fonts/bodoni-moda": "^0.4.2",
     "@expo-google-fonts/cormorant-garamond": "^0.4.1",
+    "@expo-google-fonts/fraunces": "^0.4.1",
+    "@expo-google-fonts/italiana": "^0.4.1",
     "@react-native-community/datetimepicker": "~8.4.4",
     "@shopify/react-native-skia": "2.2.12",
     "expo": "~54.0.35",

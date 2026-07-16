@@ -36,8 +36,15 @@ import type { DailyEntry } from '../src/models';
 import { AdBanner } from '../src/components/AdBanner';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
 import { formatLongDate } from '../src/core/utils/date';
-import { colors, spacing, radius, typography } from '../src/core/theme/theme';
+import { hexToRgba } from '../src/core/utils/color';
+import { useTheme } from '../src/core/theme/useTheme';
 import { useTranslation } from '../src/core/i18n/useTranslation';
+import type {
+  ThemeColors,
+  Typography,
+  SpacingTokens,
+  RadiusTokens,
+} from '../src/core/theme/theme';
 
 // Radio de toque alrededor de cada punto, en el espacio "de datos" (sin
 // escalar) — al hacer zoom, el equivalente en pantalla crece con el
@@ -52,12 +59,6 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-// Puntos de fondo muy tenues: dan la forma del "cielo completo" del año
-// aunque ese día no tenga registro. Se dibujan en el mismo Canvas de Skia
-// (una sola superficie nativa), así que sumar ~365 no cuesta lo que
-// costaría con componentes de React Native.
-const BACKGROUND_DOT_COLOR = 'rgba(244, 239, 227, 0.12)';
-
 // Primer año con datos posibles (fecha de nacimiento de Lumma). La lista
 // del selector crece sola cada año que pasa — nunca hay que tocar esto.
 const FIRST_YEAR = 2024;
@@ -70,6 +71,16 @@ export default function Firmament() {
   const [year, setYear] = useState(currentYear);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState<FirmamentPoint | null>(null);
+
+  const { colors, spacing, radius, typography } = useTheme();
+  const styles = useMemo(
+    () => makeStyles(colors, spacing, radius, typography),
+    [colors, spacing, radius, typography]
+  );
+  // Puntos de fondo muy tenues: dan la forma del "cielo completo" del año
+  // aunque ese día no tenga registro. Sigue el color de texto del tema
+  // activo para que no desentone al cambiar de tema.
+  const backgroundDotColor = useMemo(() => hexToRgba(colors.ivory, 0.12), [colors]);
 
   const yearOptions = useMemo(() => {
     const years: number[] = [];
@@ -298,7 +309,7 @@ export default function Firmament() {
                       cx={d.x * canvasWidth}
                       cy={d.y * canvasHeight}
                       r={1.4}
-                      color={BACKGROUND_DOT_COLOR}
+                      color={backgroundDotColor}
                     />
                   ))}
                   {points.map((p) => (
@@ -361,7 +372,13 @@ export default function Firmament() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  colors: ThemeColors,
+  spacing: SpacingTokens,
+  radius: RadiusTokens,
+  typography: Typography
+) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -506,4 +523,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.lavender,
   },
-});
+  });
+}
