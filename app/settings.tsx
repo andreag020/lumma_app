@@ -80,7 +80,7 @@ export default function Settings() {
           console.warn('No se pudo reprogramar el recordatorio de ánimo', err);
         }),
       ]);
-      router.replace('/');
+      router.back();
     } finally {
       setSaving(false);
     }
@@ -118,7 +118,7 @@ export default function Settings() {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.headerRow}>
-              <AnimatedPressable onPress={() => router.replace('/')} style={styles.back}>
+              <AnimatedPressable onPress={() => router.back()} style={styles.back}>
                 <Text style={styles.backText}>{'‹'}</Text>
               </AnimatedPressable>
               <Text style={styles.title}>Ajustes</Text>

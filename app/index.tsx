@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Redirect, Link } from 'expo-router';
+import { Redirect, Link, useFocusEffect } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useProfileStore } from '../src/stores/profileStore';
 import { useEntryStore } from '../src/stores/entryStore';
@@ -30,6 +30,16 @@ export default function Index() {
   // pantalla se actualiza sola porque ambas leen el mismo estado global.
   const todayEntry = useEntryStore((s) => s.entry);
   const loadEntry = useEntryStore((s) => s.loadByDate);
+
+  // Cambia en cada enfoque de la pantalla (no solo al montar) para volver
+  // a montar el bloque animado de abajo y así repetir la entrada
+  // escalonada cada vez que se vuelve a Home (p.ej. desde Ajustes).
+  const [focusKey, setFocusKey] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      setFocusKey((k) => k + 1);
+    }, [])
+  );
 
   useEffect(() => {
     load();
@@ -75,6 +85,7 @@ export default function Index() {
     <View style={styles.root}>
       <AmbientSky />
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <View key={focusKey} style={styles.animatedRoot}>
         <Animated.View
           entering={FadeInDown.delay(0).duration(450)}
           style={styles.header}
@@ -150,6 +161,7 @@ export default function Index() {
             </AnimatedPressable>
           </Link>
         </Animated.View>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -163,6 +175,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: spacing.lg,
+  },
+  animatedRoot: {
+    flex: 1,
   },
   centerContainer: {
     flex: 1,

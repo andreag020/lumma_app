@@ -262,12 +262,21 @@ function ConstellationGroup({
   );
 }
 
-// Constelaciones activas al mismo tiempo: unas pocas, para que el efecto
-// siga siendo discreto y no se sienta como una lluvia constante.
-const CONSTELLATION_SLOTS = 3;
+// Constelaciones activas al mismo tiempo: entre 2 y 4, para que el efecto
+// siga siendo discreto y variable — nunca menos de dos a la vez, nunca
+// más de cuatro para no sentirse como una lluvia constante.
+const MIN_CONSTELLATIONS = 2;
+const MAX_CONSTELLATIONS = 4;
+
+function randomSlotCount(): number {
+  return (
+    MIN_CONSTELLATIONS +
+    Math.floor(Math.random() * (MAX_CONSTELLATIONS - MIN_CONSTELLATIONS + 1))
+  );
+}
 
 function makeSlotKeys(): number[] {
-  return Array.from({ length: CONSTELLATION_SLOTS }, () => Math.random());
+  return Array.from({ length: randomSlotCount() }, () => Math.random());
 }
 
 interface AmbientSkyProps {
