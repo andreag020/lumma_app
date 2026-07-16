@@ -111,13 +111,17 @@ Menú de Ajustes (accesible desde el ícono ⚙ en Home) para gestionar la cuent
 - **Verificación:** ✅ `npm run typecheck` limpio (migración v2 de `profile` con las columnas nuevas, tipos de `Profile`/`ProfileRow` actualizados); `npm test` verde (round-trip de `Profile` con los campos de recordatorio de ánimo); verificado visualmente en Expo web + Playwright (edición de signo/horario, toggle de ánimo revelando sus chips, botón de guardado con confirmación «Cambios guardados ✓»). *Nota: la confirmación nativa de «Borrar mis datos» usa `Alert.alert`, que no tiene efecto en el preview web (limitación de `react-native-web`, no de la app) — funciona normalmente en Expo Go.*
 - **Depende de:** T4 · **Archivos:** `app/settings.tsx`, `app/index.tsx` (ícono de acceso), `src/core/constants.ts`, `src/models/profile.ts`, `src/core/db/database.ts` (migración v2), `src/repositories/profileRepository.ts`, `src/stores/profileStore.ts`, `src/services/notificationService.ts`.
 
-### [ ] T12 · AdMob básico — `S`
-`react-native-google-mobile-ads`: banner discreto en pantallas secundarias. Requiere *dev build* (no Expo Go). Sin interstitials.
-- **Aceptación:** banner solo en pantallas secundarias; nunca en el flujo principal; respeta `adsRemoved` y consentimiento.
-- **Verificación:** dev build con IDs de test de AdMob; el flujo principal no muestra anuncios.
-- **Depende de:** T11 · **Archivos:** `src/services/adsService.ts`.
+### [x] T12 · AdMob básico — `S`
+`react-native-google-mobile-ads` (`16.4.0`) + `expo-build-properties` (`~1.0.10`, requerido para la regla de Proguard del SDK de consentimiento): banner discreto (`AdBanner`) en pantallas secundarias — `mood.tsx`, `firmament.tsx`, `settings.tsx` — nunca en Home (el ritual principal). Sin interstitials ni rewarded, solo banner.
+- **Consentimiento (EEE/GDPR):** `adsService.initAds()` llama a `AdsConsent.gatherConsent()` (SDK UMP de Google, incluido en la librería) al arrancar la app; solo se inicializa `mobileAds()` y se habilita el banner si `canRequestAds` es verdadero. `delayAppMeasurementInit: true` en el plugin retrasa la medición hasta que haya consentimiento. Nunca bloquea el arranque ni rompe la app si falla — los anuncios son un extra.
+- **`ads_config.ads_removed`:** si está activado (tabla `ads_config`, ya existía desde antes), `initAds()` ni siquiera pide consentimiento — el banner no se muestra. Nada en la app activa este flag todavía (no se pidió una compra de "quitar anuncios"); el mecanismo ya queda listo para conectarlo el día que se agregue esa opción.
+- **`AdBanner` no hace nada en Expo Go:** este módulo tiene código nativo que Expo Go no incluye — a diferencia de todo lo demás en la app. Se detecta con `expo-constants` (`ExecutionEnvironment.StoreClient`) para no romper el resto de las pantallas mientras se prueba ahí; el resto de Lumma se sigue probando en Expo Go con normalidad.
+- **⚠️ IDs de prueba, pendientes de reemplazo antes de publicar:** tanto los `androidAppId`/`iosAppId` en `app.json` como el `PRODUCTION_BANNER_AD_UNIT_ID` en `adsService.ts` usan los IDs públicos de prueba de Google (los mismos de toda su documentación oficial) — necesarios para que la app no truene al no tener un ID configurado, pero **hay que crear una cuenta de AdMob real y reemplazarlos** antes de publicar en las tiendas. En desarrollo (`__DEV__`) siempre se usa `TestIds.ADAPTIVE_BANNER` sin importar el ID de producción.
+- **Aceptación:** ✅ banner solo en pantallas secundarias; nunca en el flujo principal (Home); respeta `adsRemoved` y el consentimiento recogido.
+- **Verificación:** ✅ typecheck limpio y `npx expo config` resuelve el nuevo plugin sin errores. *No se pudo verificar visualmente ni en Expo Go ni en el preview web de este entorno: el módulo tiene código nativo que Expo Go no soporta, y además importa internamente `codegenNativeComponent` de React Native, algo que ni siquiera el bundler de Metro puede resolver para web (rompe el bundle entero, no solo el banner) — es una limitación real de la librería, no un bug de Lumma. La única forma de probarlo es con un *dev build* real (`eas build --profile development` o `npx expo run:android`/`run:ios`), tal como ya anticipaba la nota original de esta tarea.**
+- **Depende de:** T11 · **Archivos:** `src/services/adsService.ts`, `src/components/AdBanner.tsx`, `src/stores/adsStore.ts`, `app/_layout.tsx` (llama a `initAds()` al arrancar), `app/mood.tsx`, `app/firmament.tsx`, `app/settings.tsx` (insertan `<AdBanner />`), `app.json` (plugin + IDs de prueba).
 
-> ✅ **Checkpoint D** — notificación dispara · borrar datos funciona · banner solo en secundarias.
+> ✅ **Checkpoint D** — notificación dispara · borrar datos funciona · banner solo en secundarias (código completo, *pendiente de probar en un dev build real*).
 
 ---
 
@@ -128,6 +132,6 @@ Menú de Ajustes (accesible desde el ícono ⚙ en Home) para gestionar la cuent
 | 0 Fundaciones | T1–T4 | ✅ **Hecho** | Typecheck + tests verdes, config Expo válida |
 | 1 Ritual básico | T5–T7 | ✅ **Hecho** | Onboarding → astrología + frase diaria |
 | 2 Core | T8–T9 | ✅ **Hecho** | Registro de ánimo → firmamento personal |
-| 3 Retención | T10–T12 | 🚧 T10 y T11 hechos | Notificaciones ✅ + ajustes/cuenta ✅ + anuncios ⏳ |
+| 3 Retención | T10–T12 | ✅ **Hecho** (código) | Notificaciones ✅ + ajustes/cuenta ✅ + anuncios ✅ (código, falta probar en dev build) |
 
-**Siguiente acción sugerida:** probar en tu teléfono el recorrido completo, incluyendo el nuevo menú de Ajustes (⚙ en Home) — editar signo/apodo/horario, activar el recordatorio de ánimo y confirmar «Borrar mis datos» — y luego seguir con T12 (AdMob) cuando quieras monetizar.
+**Siguiente acción sugerida:** T12 (anuncios) necesita un *dev build* real para poder probarse — no funciona en Expo Go. Antes de publicar: (1) crear una cuenta en [Google AdMob](https://apps.admob.com), (2) reemplazar los IDs de prueba en `app.json` (`androidAppId`/`iosAppId`) y en `src/services/adsService.ts` (`PRODUCTION_BANNER_AD_UNIT_ID`) por los reales de Lumma, (3) generar el dev build (`eas build --profile development` o `npx expo run:android`/`run:ios`) y confirmar ahí que el banner aparece en Ánimo/Firmamento/Ajustes pero nunca en Home, y que el diálogo de consentimiento aparece si corresponde.

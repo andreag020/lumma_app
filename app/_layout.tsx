@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { getDb } from '../src/core/db/database';
 import { seedContent, refreshRemoteContent } from '../src/services/contentService';
+import { initAds } from '../src/services/adsService';
 import { colors } from '../src/core/theme/theme';
 import { fontAssets } from '../src/core/theme/fonts';
 
@@ -39,6 +40,9 @@ export default function RootLayout() {
       // No bloquea el arranque: si hay red, trae lecturas nuevas de fondo;
       // si no, la app sigue con el contenido embebido/ya sincronizado.
       refreshRemoteContent();
+      // Recoge consentimiento e inicializa el SDK de anuncios (no hace
+      // nada en Expo Go, ver adsService.ts). Tampoco bloquea el arranque.
+      initAds();
     })();
   }, []);
 

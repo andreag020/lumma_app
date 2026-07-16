@@ -15,6 +15,7 @@ import { useProfileStore } from '../src/stores/profileStore';
 import { getDailyContent } from '../src/services/contentService';
 import { todayISODate } from '../src/core/utils/date';
 import { generateLocalId } from '../src/core/utils/id';
+import { AdBanner } from '../src/components/AdBanner';
 import { AmbientSky } from '../src/components/AmbientSky';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
 import { MOOD_PALETTE } from '../src/models';
@@ -153,6 +154,7 @@ export default function Mood() {
                 </AnimatedPressable>
               </>
             )}
+            <AdBanner />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>

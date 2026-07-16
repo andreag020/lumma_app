@@ -18,6 +18,7 @@ import {
   scheduleDailyPhraseReminder,
   scheduleMoodReminder,
 } from '../src/services/notificationService';
+import { AdBanner } from '../src/components/AdBanner';
 import { AmbientSky } from '../src/components/AmbientSky';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
 import { TimePickerField } from '../src/components/TimePickerField';
@@ -206,6 +207,7 @@ export default function Settings() {
             <AnimatedPressable onPress={handleWipe} style={styles.danger}>
               <Text style={styles.dangerText}>Borrar todos mis datos</Text>
             </AnimatedPressable>
+            <AdBanner />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>

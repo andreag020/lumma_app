@@ -33,6 +33,7 @@ import {
   type FirmamentPoint,
 } from '../src/features/firmament/layout';
 import type { DailyEntry } from '../src/models';
+import { AdBanner } from '../src/components/AdBanner';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
 import { formatLongDateEs } from '../src/core/utils/date';
 import { colors, spacing, radius, typography } from '../src/core/theme/theme';
@@ -315,6 +316,8 @@ export default function Firmament() {
           </GestureDetector>
         </ScrollView>
       )}
+
+      <AdBanner />
 
       <Modal
         visible={selectedPoint !== null}
