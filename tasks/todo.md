@@ -44,7 +44,7 @@ Modelos puros (dominio ↔ fila) y repositorios CRUD.
 
 ### [x] T5 · Onboarding local — `M`
 Flujo sin cuenta: elegir signo (chips) y hora de notificación; apodo opcional. Idioma y módulos quedan fijos (decisión ya resuelta en `plan.md`), sin pantalla adicional, para cumplir el objetivo de ≤60 s.
-- **Selector de hora (actualizado a pedido de la usuaria):** al principio se usaban chips de horas preestablecidas para evitar sumar una dependencia nativa justo tras resolver un problema de compatibilidad de SDK; luego la usuaria pidió poder elegir cualquier hora a su conveniencia, así que se agregó `@react-native-community/datetimepicker` (`~8.4.4`, la versión exacta que trae empaquetada Expo Go SDK 54 — confirmado en `bundledNativeModules.json`) vía `src/components/TimePickerField.tsx`, reutilizado también en Ajustes (T11).
+- **Selector de hora (actualizado dos veces a pedido de la usuaria):** al principio se usaban chips de horas preestablecidas para evitar sumar una dependencia nativa justo tras resolver un problema de compatibilidad de SDK; luego pidió poder elegir cualquier hora a su conveniencia, así que se probó `@react-native-community/datetimepicker` — pero el picker nativo del sistema operativo rompía con el resto de la interfaz (formato/estilo ajeno a la marca). Se reemplazó por un selector propio con diseño de Lumma: dos ruedas (hora/minuto) con `FlatList` + snap, sin depender del picker del SO ni de una dependencia nativa nueva (`src/components/TimePickerField.tsx`, reutilizado también en Ajustes, T11).
 - **Aceptación:** ✅ onboarding guarda el perfil vía `useProfileStore.save`; explica en pantalla qué se guarda («solo en tu teléfono»); redirige a Home al terminar.
 - **Verificación:** ✅ typecheck limpio; `Index` redirige a `/onboarding` cuando `getProfile()` devuelve `null`; selector de hora verificado visualmente en Expo web (el picker nativo en sí solo se puede probar en Expo Go, no en web).
 - **Depende de:** T4, T2 · **Archivos:** `app/onboarding.tsx`, `src/stores/profileStore.ts`, `src/core/utils/id.ts`, `src/components/TimePickerField.tsx`.
@@ -70,7 +70,7 @@ Astrología del signo + frase del día desde contenido local, con acceso al regi
 ## Fase 2 — Registro y firmamento (core)
 
 ### [x] T8 · Registro de ánimo — `M`
-Paleta fija de 8 moods (color + etiqueta); nota opcional; persiste con `upsertEntry` vía `entryStore` (un registro por día, editable).
+Paleta fija de moods (color + etiqueta) — ampliada de 8 a 12 a pedido de la usuaria (`src/models/moodPalette.ts`); nota opcional; persiste con `upsertEntry` vía `entryStore` (un registro por día, editable).
 - **Aceptación:** ✅ 3 toques desde Home (botón → elegir color → Guardar); guarda `DailyEntry` de hoy; reabrir el mismo día precarga el registro existente para editarlo. Home muestra el mood de hoy si ya se registró.
 - **Verificación:** ✅ `npm run typecheck` limpio, `npm test` verde.
 - **Depende de:** T7 · **Archivos:** `app/mood.tsx`, `src/stores/entryStore.ts`, `src/models/moodPalette.ts`.

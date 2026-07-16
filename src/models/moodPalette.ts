@@ -14,6 +14,10 @@ export const MOOD_PALETTE: MoodOption[] = [
   { label: 'Cansancio', color: '#8892B0' },
   { label: 'Melancolía', color: '#5B6491' },
   { label: 'Inquietud', color: '#D97757' },
+  { label: 'Entusiasmo', color: '#E2645A' },
+  { label: 'Curiosidad', color: '#6FB8D9' },
+  { label: 'Nostalgia', color: '#A87CA0' },
+  { label: 'Frustración', color: '#A85D45' },
 ];
 
 export function moodOptionByColor(color: string): MoodOption | undefined {
