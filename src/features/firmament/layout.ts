@@ -46,6 +46,7 @@ export interface FirmamentPoint extends GridPosition {
   date: string;
   color: string;
   label: string;
+  note: string | null;
 }
 
 /**
@@ -62,7 +63,13 @@ export function entriesToFirmamentPoints(
     .filter((e) => yearOf(e.date) === year)
     .map((e) => {
       const pos = dayToGridPosition(dayOfYear(e.date), totalDays, columns);
-      return { ...pos, date: e.date, color: e.moodColor, label: e.moodLabel };
+      return {
+        ...pos,
+        date: e.date,
+        color: e.moodColor,
+        label: e.moodLabel,
+        note: e.note,
+      };
     });
 }
 
