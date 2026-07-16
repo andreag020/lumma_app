@@ -49,6 +49,7 @@ describe('model row round-trips', () => {
       contentId: 'c-1',
       date: '2026-07-13',
       zodiacSign: 'piscis',
+      language: 'es',
       shortAstrologyText: 'Hoy el cielo invita a la calma.',
       dailyPhrase: 'Cada día deja un brillo.',
       extendedText: null,

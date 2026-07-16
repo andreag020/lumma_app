@@ -4,6 +4,7 @@ import type { Profile } from '../models';
 import { getDailyContent } from './contentService';
 import { parseTime, buildPhraseNotificationContent } from './notificationText';
 import { addDays, todayISODate } from '../core/utils/date';
+import { translate } from '../core/i18n/translate';
 
 // Canal propio (no "default"): el recordatorio de ánimo configurable desde
 // Ajustes (T11) vive en su propio canal de Android, separado de este.
@@ -26,10 +27,10 @@ Notifications.setNotificationHandler({
   }),
 });
 
-async function ensureAndroidChannel(): Promise<void> {
+async function ensureAndroidChannel(profile: Profile): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(PHRASE_CHANNEL_ID, {
-    name: 'Frase diaria',
+    name: translate(profile.language, 'notifPhraseChannelName'),
     importance: Notifications.AndroidImportance.DEFAULT,
   });
 }
@@ -57,7 +58,7 @@ export async function scheduleDailyPhraseReminder(
   }
   if (status !== 'granted') return;
 
-  await ensureAndroidChannel();
+  await ensureAndroidChannel(profile);
   // Solo cancelamos las notificaciones de ESTE canal (frase diaria), no
   // todas — el futuro recordatorio de ánimo vivirá en su propio canal y
   // no debe verse afectado por esta reprogramación.
@@ -78,12 +79,13 @@ export async function scheduleDailyPhraseReminder(
     fireDate.setHours(hour, minute, 0, 0);
     if (fireDate.getTime() <= Date.now()) continue; // ya pasó hoy — se salta
 
-    const content = await getDailyContent(date, profile.zodiacSign);
+    const content = await getDailyContent(date, profile.zodiacSign, profile.language);
     if (!content) continue; // sin lectura para esa fecha: no se inventa una
 
     const { title, body } = buildPhraseNotificationContent(
       profile.zodiacSign,
-      content
+      content,
+      profile.language
     );
 
     await Notifications.scheduleNotificationAsync({
@@ -103,10 +105,10 @@ export async function scheduleDailyPhraseReminder(
   }
 }
 
-async function ensureAndroidMoodChannel(): Promise<void> {
+async function ensureAndroidMoodChannel(profile: Profile): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(MOOD_CHANNEL_ID, {
-    name: 'Recordatorio de ánimo',
+    name: translate(profile.language, 'notifMoodChannelName'),
     importance: Notifications.AndroidImportance.DEFAULT,
   });
 }
@@ -139,14 +141,14 @@ export async function scheduleMoodReminder(profile: Profile): Promise<void> {
   }
   if (status !== 'granted') return;
 
-  await ensureAndroidMoodChannel();
+  await ensureAndroidMoodChannel(profile);
   const [hour, minute] = parseTime(profile.moodReminderTime);
 
   await Notifications.scheduleNotificationAsync({
     identifier: MOOD_CHANNEL_ID,
     content: {
-      title: 'Tu momento de calma',
-      body: '¿Cómo te sientes hoy? Registra tu ánimo en Lumma.',
+      title: translate(profile.language, 'notifMoodTitle'),
+      body: translate(profile.language, 'notifMoodBody'),
       sound: false,
     },
     trigger: {

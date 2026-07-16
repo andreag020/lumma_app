@@ -32,24 +32,45 @@ export function addDays(isoDate: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-const MONTHS_ES = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-];
+import type { Language } from '../../models/language';
 
-/** "2026-07-15" → "15 de julio de 2026". Sin depender de Intl, para que
- * funcione igual en cualquier motor/entorno. */
-export function formatLongDateEs(isoDate: string): string {
+const MONTHS: Record<Language, string[]> = {
+  es: [
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
+  ],
+  en: [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ],
+};
+
+/** "2026-07-15" → "15 de julio de 2026" (es) o "July 15, 2026" (en). Sin
+ * depender de Intl, para que funcione igual en cualquier motor/entorno. */
+export function formatLongDate(isoDate: string, language: Language): string {
   const [year, month, day] = isoDate.split('-').map(Number);
-  return `${day} de ${MONTHS_ES[month - 1]} de ${year}`;
+  const monthName = MONTHS[language][month - 1];
+  return language === 'en'
+    ? `${monthName} ${day}, ${year}`
+    : `${day} de ${monthName} de ${year}`;
 }

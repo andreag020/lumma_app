@@ -1,3 +1,5 @@
+import type { Language } from './language';
+
 /** Signos zodiacales. El onboarding pide selección manual para reducir
  * la sensibilidad de los datos (ver consideraciones-tecnicas...md). */
 export const ZODIAC_SIGNS = [
@@ -21,21 +23,41 @@ export function isZodiacSign(value: string): value is ZodiacSign {
   return (ZODIAC_SIGNS as readonly string[]).includes(value);
 }
 
-/** Nombre visible en español (con acentos) para cada signo. */
-export const ZODIAC_LABELS: Record<ZodiacSign, string> = {
-  aries: 'Aries',
-  tauro: 'Tauro',
-  geminis: 'Géminis',
-  cancer: 'Cáncer',
-  leo: 'Leo',
-  virgo: 'Virgo',
-  libra: 'Libra',
-  escorpio: 'Escorpio',
-  sagitario: 'Sagitario',
-  capricornio: 'Capricornio',
-  acuario: 'Acuario',
-  piscis: 'Piscis',
+/** Nombre visible del signo, por idioma. */
+export const ZODIAC_LABELS: Record<Language, Record<ZodiacSign, string>> = {
+  es: {
+    aries: 'Aries',
+    tauro: 'Tauro',
+    geminis: 'Géminis',
+    cancer: 'Cáncer',
+    leo: 'Leo',
+    virgo: 'Virgo',
+    libra: 'Libra',
+    escorpio: 'Escorpio',
+    sagitario: 'Sagitario',
+    capricornio: 'Capricornio',
+    acuario: 'Acuario',
+    piscis: 'Piscis',
+  },
+  en: {
+    aries: 'Aries',
+    tauro: 'Taurus',
+    geminis: 'Gemini',
+    cancer: 'Cancer',
+    leo: 'Leo',
+    virgo: 'Virgo',
+    libra: 'Libra',
+    escorpio: 'Scorpio',
+    sagitario: 'Sagittarius',
+    capricornio: 'Capricorn',
+    acuario: 'Aquarius',
+    piscis: 'Pisces',
+  },
 };
+
+export function zodiacLabel(sign: ZodiacSign, language: Language): string {
+  return ZODIAC_LABELS[language][sign];
+}
 
 // U+FE0E: selector de presentación de TEXTO. Sin él, muchas fuentes/SO
 // renderizan los glifos astrológicos como emoji a todo color (rompe la

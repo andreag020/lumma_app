@@ -78,6 +78,19 @@ export async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
       PRAGMA user_version = 2;
     `);
   }
+
+  if (currentVersion < 3) {
+    // Distribución multi-país (ES/EN): el contenido diario ahora se guarda
+    // por idioma. Las filas ya existentes son todas en español.
+    await db.execAsync(`
+      ALTER TABLE daily_content ADD COLUMN language TEXT NOT NULL DEFAULT 'es';
+      DROP INDEX IF EXISTS idx_daily_content_date_sign;
+      CREATE INDEX IF NOT EXISTS idx_daily_content_date_sign_lang
+        ON daily_content (date, zodiac_sign, language);
+
+      PRAGMA user_version = 3;
+    `);
+  }
 }
 
 /** Borra todos los datos de la usuaria (ajustes → "borrar mis datos"). */

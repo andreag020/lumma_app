@@ -17,8 +17,9 @@ import { todayISODate } from '../src/core/utils/date';
 import { generateLocalId } from '../src/core/utils/id';
 import { AmbientSky } from '../src/components/AmbientSky';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
-import { MOOD_PALETTE } from '../src/models';
+import { MOOD_PALETTE, moodLabel } from '../src/models';
 import { colors, spacing, radius, typography } from '../src/core/theme/theme';
+import { useTranslation } from '../src/core/i18n/useTranslation';
 
 /** Registro de ánimo del día: color + etiqueta (paleta fija) + nota opcional.
  * Un registro por fecha — reabrir esta pantalla el mismo día edita el
@@ -30,6 +31,7 @@ export default function Mood() {
   const [note, setNote] = useState('');
   const [contentId, setContentId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { t, language } = useTranslation();
 
   const today = todayISODate();
 
@@ -48,7 +50,7 @@ export default function Mood() {
   // Vincula el registro con el contenido del día (mejor esfuerzo, no bloquea).
   useEffect(() => {
     if (!profile) return;
-    getDailyContent(today, profile.zodiacSign).then((c) => {
+    getDailyContent(today, profile.zodiacSign, profile.language).then((c) => {
       if (c) setContentId(c.contentId);
     });
   }, [profile, today]);
@@ -67,7 +69,7 @@ export default function Mood() {
         entryId: entry?.entryId ?? generateLocalId('entry'),
         date: today,
         moodColor: option.color,
-        moodLabel: option.label,
+        moodLabel: moodLabel(option, language),
         note: note.trim() || null,
         dailyPhraseId: contentId,
         astrologyMessageId: contentId,
@@ -91,12 +93,10 @@ export default function Mood() {
             keyboardShouldPersistTaps="handled"
           >
             <Text style={styles.eyebrow}>
-              {isEditing ? 'Edita tu día' : 'Tu día de hoy'}
+              {isEditing ? t('moodEyebrowEdit') : t('moodEyebrowNew')}
             </Text>
-            <Text style={styles.title}>¿Cómo te sientes?</Text>
-            <Text style={styles.lede}>
-              Elige un color. Se sumará a tu firmamento personal.
-            </Text>
+            <Text style={styles.title}>{t('moodTitle')}</Text>
+            <Text style={styles.lede}>{t('moodLede')}</Text>
 
             {!loaded ? null : (
               <>
@@ -122,7 +122,7 @@ export default function Mood() {
                             selected && styles.moodLabelSelected,
                           ]}
                         >
-                          {option.label}
+                          {moodLabel(option, language)}
                         </Text>
                       </AnimatedPressable>
                     );
@@ -130,12 +130,12 @@ export default function Mood() {
                 </View>
 
                 <Text style={styles.sectionLabel}>
-                  Una nota <Text style={styles.optional}>(opcional)</Text>
+                  {t('moodNoteLabel')} <Text style={styles.optional}>{t('optional')}</Text>
                 </Text>
                 <TextInput
                   value={note}
                   onChangeText={setNote}
-                  placeholder="¿Algo que quieras recordar de hoy?"
+                  placeholder={t('moodNotePlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   style={styles.input}
                   multiline
@@ -148,7 +148,7 @@ export default function Mood() {
                   style={[styles.cta, !canSave && styles.ctaDisabled]}
                 >
                   <Text style={styles.ctaText}>
-                    {saving ? 'Guardando…' : 'Guardar'}
+                    {saving ? t('saving') : t('save')}
                   </Text>
                 </AnimatedPressable>
               </>

@@ -17,6 +17,7 @@ import {
 } from '../src/models';
 import { colors, spacing, radius, typography } from '../src/core/theme/theme';
 import { fonts } from '../src/core/theme/fonts';
+import { useTranslation } from '../src/core/i18n/useTranslation';
 
 /** Home: astrología del día + frase, o redirección a onboarding sin perfil. */
 export default function Index() {
@@ -25,6 +26,7 @@ export default function Index() {
   const load = useProfileStore((s) => s.load);
   const [content, setContent] = useState<DailyContent | null>(null);
   const [contentLoaded, setContentLoaded] = useState(false);
+  const { t } = useTranslation();
 
   // Store compartido con la pantalla de ánimo: al volver de /mood, esta
   // pantalla se actualiza sola porque ambas leen el mismo estado global.
@@ -49,7 +51,7 @@ export default function Index() {
   useEffect(() => {
     if (!profile) return;
     let cancelled = false;
-    getDailyContent(todayISODate(), profile.zodiacSign).then((c) => {
+    getDailyContent(todayISODate(), profile.zodiacSign, profile.language).then((c) => {
       if (!cancelled) {
         setContent(c);
         setContentLoaded(true);
@@ -93,9 +95,13 @@ export default function Index() {
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.greeting}>
-                {profile.nickname ? `Hola, ${profile.nickname}` : 'Hola de nuevo'}
+                {profile.nickname
+                  ? t('greetingWithName', { name: profile.nickname })
+                  : t('greetingNoName')}
               </Text>
-              <Text style={styles.sign}>{ZODIAC_LABELS[profile.zodiacSign]}</Text>
+              <Text style={styles.sign}>
+                {ZODIAC_LABELS[profile.language][profile.zodiacSign]}
+              </Text>
             </View>
             <Text style={styles.glyph}>{ZODIAC_SYMBOLS[profile.zodiacSign]}</Text>
             <Link href="/settings" asChild>
@@ -120,10 +126,7 @@ export default function Index() {
             </View>
           ) : (
             <View style={styles.card}>
-              <Text style={styles.astrology}>
-                Hoy no encontramos tu guía astrológica. Vuelve a intentarlo
-                mañana.
-              </Text>
+              <Text style={styles.astrology}>{t('noContentFallback')}</Text>
             </View>
           )}
         </Animated.View>
@@ -138,7 +141,7 @@ export default function Index() {
                 style={[styles.dot, { backgroundColor: todayEntry.moodColor }]}
               />
               <Text style={styles.todayPreviewText}>
-                Hoy: {todayEntry.moodLabel}
+                {t('todayPreview', { label: todayEntry.moodLabel })}
               </Text>
             </View>
           )}
@@ -146,18 +149,14 @@ export default function Index() {
           <Link href="/mood" asChild>
             <AnimatedPressable style={styles.moodButton}>
               <Text style={styles.moodButtonText}>
-                {todayEntry
-                  ? 'Editar mi ánimo de hoy'
-                  : 'Registrar mi ánimo de hoy'}
+                {todayEntry ? t('moodButtonEdit') : t('moodButtonNew')}
               </Text>
             </AnimatedPressable>
           </Link>
 
           <Link href="/firmament" asChild>
             <AnimatedPressable style={styles.firmamentLink}>
-              <Text style={styles.firmamentLinkText}>
-                Ver mi firmamento personal
-              </Text>
+              <Text style={styles.firmamentLinkText}>{t('firmamentLink')}</Text>
             </AnimatedPressable>
           </Link>
         </Animated.View>

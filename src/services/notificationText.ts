@@ -12,7 +12,8 @@
  * recordatorio de ánimo aparte, configurable desde Ajustes, es una
  * función futura (ver tasks/todo.md T11) y no debe compartir este canal.
  */
-import { ZODIAC_LABELS, type ZodiacSign, type DailyContent } from '../models';
+import { zodiacLabel, type ZodiacSign, type DailyContent, type Language } from '../models';
+import { translate } from '../core/i18n/translate';
 
 /** "HH:mm" → [hour, minute]. */
 export function parseTime(time: string): [number, number] {
@@ -27,10 +28,13 @@ export function parseTime(time: string): [number, number] {
  */
 export function buildPhraseNotificationContent(
   sign: ZodiacSign,
-  content: DailyContent
+  content: DailyContent,
+  language: Language
 ): { title: string; body: string } {
   return {
-    title: `${ZODIAC_LABELS[sign]} · tu lectura de hoy`,
+    title: translate(language, 'notifPhraseTitle', {
+      sign: zodiacLabel(sign, language),
+    }),
     body: content.shortAstrologyText,
   };
 }
