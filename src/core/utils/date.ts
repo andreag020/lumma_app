@@ -31,3 +31,25 @@ export function addDays(isoDate: string, days: number): string {
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
+
+const MONTHS_ES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
+/** "2026-07-15" → "15 de julio de 2026". Sin depender de Intl, para que
+ * funcione igual en cualquier motor/entorno. */
+export function formatLongDateEs(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  return `${day} de ${MONTHS_ES[month - 1]} de ${year}`;
+}

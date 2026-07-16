@@ -1,5 +1,5 @@
 import { generateLocalId } from '../../src/core/utils/id';
-import { todayISODate, addDays } from '../../src/core/utils/date';
+import { todayISODate, addDays, formatLongDateEs } from '../../src/core/utils/date';
 
 describe('generateLocalId', () => {
   test('includes the given prefix and produces unique values', () => {
@@ -35,5 +35,19 @@ describe('addDays', () => {
 
   test('offset 0 returns the same date', () => {
     expect(addDays('2026-07-13', 0)).toBe('2026-07-13');
+  });
+});
+
+describe('formatLongDateEs', () => {
+  test('formats a date in long Spanish form', () => {
+    expect(formatLongDateEs('2026-07-15')).toBe('15 de julio de 2026');
+  });
+
+  test('does not zero-pad the day', () => {
+    expect(formatLongDateEs('2026-01-05')).toBe('5 de enero de 2026');
+  });
+
+  test('handles December correctly', () => {
+    expect(formatLongDateEs('2026-12-31')).toBe('31 de diciembre de 2026');
   });
 });

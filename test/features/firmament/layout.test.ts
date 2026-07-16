@@ -66,7 +66,7 @@ describe('entriesToFirmamentPoints', () => {
       date: '2026-12-31',
       moodColor: '#C7B6F2',
       moodLabel: 'Calma',
-      note: null,
+      note: 'Cierre de año tranquilo.',
       dailyPhraseId: null,
       astrologyMessageId: null,
     },
@@ -90,13 +90,20 @@ describe('entriesToFirmamentPoints', () => {
     ]);
   });
 
-  test('cada punto conserva el color y la etiqueta del registro', () => {
+  test('cada punto conserva el color, la etiqueta y la nota del registro', () => {
     const [point] = entriesToFirmamentPoints(
       [entries[0]],
       2026
     );
     expect(point.color).toBe('#E5C46B');
     expect(point.label).toBe('Alegría');
+    expect(point.note).toBeNull();
+  });
+
+  test('conserva la nota cuando el registro tiene una', () => {
+    const points = entriesToFirmamentPoints(entries, 2026);
+    const withNote = points.find((p) => p.date === '2026-12-31');
+    expect(withNote?.note).toBe('Cierre de año tranquilo.');
   });
 
   test('el primer día del año cae en la primera celda', () => {

@@ -18,10 +18,16 @@ import {
   allDaysGridPositions,
   entriesToFirmamentPoints,
   daysInYear,
+  type FirmamentPoint,
 } from '../src/features/firmament/layout';
 import type { DailyEntry } from '../src/models';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
+import { formatLongDateEs } from '../src/core/utils/date';
 import { colors, spacing, radius, typography } from '../src/core/theme/theme';
+
+// Radio de toque alrededor de cada punto (más grande que el punto en sí,
+// para que sea cómodo tocarlo con el dedo).
+const HIT_RADIUS = 16;
 
 // Puntos de fondo muy tenues: dan la forma del "cielo completo" del año
 // aunque ese día no tenga registro. Se dibujan en el mismo Canvas de Skia
@@ -39,6 +45,7 @@ export default function Firmament() {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedPoint, setSelectedPoint] = useState<FirmamentPoint | null>(null);
 
   const yearOptions = useMemo(() => {
     const years: number[] = [];
@@ -69,6 +76,21 @@ export default function Firmament() {
       entries ? entriesToFirmamentPoints(entries, year, FIRMAMENT_COLUMNS) : [],
     [entries, year]
   );
+
+  /** Busca el punto más cercano al toque, dentro de un radio cómodo.
+   * Ignora los puntos de fondo (no tienen registro que mostrar). */
+  function handleCanvasPress(x: number, y: number) {
+    let closest: FirmamentPoint | null = null;
+    let closestDist = Infinity;
+    for (const p of points) {
+      const dist = Math.hypot(p.x * canvasWidth - x, p.y * canvasHeight - y);
+      if (dist <= HIT_RADIUS && dist < closestDist) {
+        closest = p;
+        closestDist = dist;
+      }
+    }
+    if (closest) setSelectedPoint(closest);
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -143,7 +165,8 @@ export default function Firmament() {
           style={{ marginTop: spacing.xl }}
         />
       ) : (
-        <View
+        <Pressable
+          onPress={(e) => handleCanvasPress(e.nativeEvent.locationX, e.nativeEvent.locationY)}
           style={[
             styles.canvasWrap,
             { width: canvasWidth, height: canvasHeight },
@@ -171,8 +194,43 @@ export default function Firmament() {
               </Circle>
             ))}
           </Canvas>
-        </View>
+        </Pressable>
       )}
+
+      <Modal
+        visible={selectedPoint !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedPoint(null)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setSelectedPoint(null)}
+        >
+          {selectedPoint && (
+            <Pressable style={styles.detailCard} onPress={() => {}}>
+              <Text style={styles.detailDate}>
+                {formatLongDateEs(selectedPoint.date)}
+              </Text>
+              <View style={styles.detailMoodRow}>
+                <View
+                  style={[styles.detailSwatch, { backgroundColor: selectedPoint.color }]}
+                />
+                <Text style={styles.detailMoodLabel}>{selectedPoint.label}</Text>
+              </View>
+              <Text style={styles.detailNote}>
+                {selectedPoint.note ?? 'Sin nota ese día.'}
+              </Text>
+              <AnimatedPressable
+                onPress={() => setSelectedPoint(null)}
+                style={styles.detailClose}
+              >
+                <Text style={styles.detailCloseText}>Cerrar</Text>
+              </AnimatedPressable>
+            </Pressable>
+          )}
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -261,5 +319,55 @@ const styles = StyleSheet.create({
   yearOptionTextSelected: {
     color: colors.gold,
     fontWeight: '600',
+  },
+  detailCard: {
+    width: 280,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+  },
+  detailDate: {
+    ...typography.caption,
+    color: colors.gold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: spacing.sm,
+  },
+  detailMoodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  detailSwatch: {
+    width: 16,
+    height: 16,
+    borderRadius: radius.pill,
+  },
+  detailMoodLabel: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.ivory,
+  },
+  detailNote: {
+    ...typography.body,
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  detailClose: {
+    marginTop: spacing.lg,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  detailCloseText: {
+    ...typography.body,
+    fontSize: 14,
+    color: colors.lavender,
   },
 });
