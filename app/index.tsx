@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, Link } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useProfileStore } from '../src/stores/profileStore';
 import { useEntryStore } from '../src/stores/entryStore';
 import { getDailyContent } from '../src/services/contentService';
@@ -74,7 +75,10 @@ export default function Index() {
     <View style={styles.root}>
       <AmbientSky />
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <View style={styles.header}>
+        <Animated.View
+          entering={FadeInDown.delay(0).duration(450)}
+          style={styles.header}
+        >
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.greeting}>
@@ -89,29 +93,34 @@ export default function Index() {
               </AnimatedPressable>
             </Link>
           </View>
-        </View>
+        </Animated.View>
 
-        {!contentLoaded ? (
-          <ActivityIndicator
-            color={colors.gold}
-            style={{ marginTop: spacing.xl }}
-          />
-        ) : content ? (
-          <View style={styles.card}>
-            <Text style={styles.astrology}>{content.shortAstrologyText}</Text>
-            <View style={styles.divider} />
-            <Text style={styles.phrase}>&ldquo;{content.dailyPhrase}&rdquo;</Text>
-          </View>
-        ) : (
-          <View style={styles.card}>
-            <Text style={styles.astrology}>
-              Hoy no encontramos tu guía astrológica. Vuelve a intentarlo
-              mañana.
-            </Text>
-          </View>
-        )}
+        <Animated.View entering={FadeInDown.delay(130).duration(450)}>
+          {!contentLoaded ? (
+            <ActivityIndicator
+              color={colors.gold}
+              style={{ marginTop: spacing.xl }}
+            />
+          ) : content ? (
+            <View style={styles.card}>
+              <Text style={styles.astrology}>{content.shortAstrologyText}</Text>
+              <View style={styles.divider} />
+              <Text style={styles.phrase}>&ldquo;{content.dailyPhrase}&rdquo;</Text>
+            </View>
+          ) : (
+            <View style={styles.card}>
+              <Text style={styles.astrology}>
+                Hoy no encontramos tu guía astrológica. Vuelve a intentarlo
+                mañana.
+              </Text>
+            </View>
+          )}
+        </Animated.View>
 
-        <View style={styles.actions}>
+        <Animated.View
+          entering={FadeInDown.delay(260).duration(450)}
+          style={styles.actions}
+        >
           {todayEntry && (
             <View style={styles.todayPreview}>
               <View
@@ -140,7 +149,7 @@ export default function Index() {
               </Text>
             </AnimatedPressable>
           </Link>
-        </View>
+        </Animated.View>
       </SafeAreaView>
     </View>
   );
