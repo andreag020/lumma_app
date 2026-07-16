@@ -28,6 +28,19 @@ export function getBannerAdUnitId(): string {
     : PRODUCTION_BANNER_AD_UNIT_ID_ANDROID;
 }
 
+// Dispositivos de las personas que prueban builds de beta (Internal
+// testing / TestFlight): siempre reciben anuncios de PRUEBA de Google, sin
+// importar que el build ya no esté en modo desarrollo (__DEV__ es false en
+// un build de EAS). Sin esto, tus testers verían y podrían tocar anuncios
+// reales repetidamente, lo que AdMob puede marcar como "tráfico inválido".
+//
+// Cómo conseguir el ID de un dispositivo: corre el build una vez con el
+// dispositivo conectado y revisa los logs nativos (Logcat en Android,
+// consola de Xcode en iOS) — al iniciar, el SDK de Google imprime algo
+// como "Use RequestConfiguration.Builder.setTestDeviceIds(Arrays.asList("XXXXX"))
+// to get test ads on this device". Copia ese ID aquí.
+const TEST_DEVICE_IDENTIFIERS: string[] = [];
+
 /**
  * Prepara los anuncios al arrancar la app: recoge el consentimiento del
  * usuario (obligatorio en el Espacio Económico Europeo, política de
@@ -51,6 +64,12 @@ export async function initAds(): Promise<void> {
     if (!canRequestAds) {
       useAdsStore.getState().setCanShowAds(false);
       return;
+    }
+
+    if (TEST_DEVICE_IDENTIFIERS.length > 0) {
+      await mobileAds().setRequestConfiguration({
+        testDeviceIdentifiers: TEST_DEVICE_IDENTIFIERS,
+      });
     }
 
     await mobileAds().initialize();

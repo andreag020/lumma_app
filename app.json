@@ -29,9 +29,11 @@
       ]
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lumma.app"
     },
     "android": {
+      "package": "com.lumma.app",
       "adaptiveIcon": {
         "backgroundColor": "#0E0B1A",
         "foregroundImage": "./assets/android-icon-foreground.png",
