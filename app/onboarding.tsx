@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,13 @@ import {
   ZODIAC_SYMBOLS,
   type ZodiacSign,
 } from '../src/models';
-import { colors, spacing, radius, typography } from '../src/core/theme/theme';
+import { useTheme } from '../src/core/theme/useTheme';
+import type {
+  ThemeColors,
+  Typography,
+  SpacingTokens,
+  RadiusTokens,
+} from '../src/core/theme/theme';
 
 const DEFAULT_MODULES = ['astrology', 'mood', 'firmament'];
 
@@ -31,6 +37,12 @@ export default function Onboarding() {
   const [time, setTime] = useState('08:00');
   const [nickname, setNickname] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const { colors, spacing, radius, typography } = useTheme();
+  const styles = useMemo(
+    () => makeStyles(colors, spacing, radius, typography),
+    [colors, spacing, radius, typography]
+  );
 
   const canContinue = sign !== null && !saving;
 
@@ -145,7 +157,13 @@ export default function Onboarding() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  colors: ThemeColors,
+  spacing: SpacingTokens,
+  radius: RadiusTokens,
+  typography: Typography
+) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
@@ -249,4 +267,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.background,
   },
-});
+  });
+}

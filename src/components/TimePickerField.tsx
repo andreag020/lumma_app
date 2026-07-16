@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import DateTimePicker, {
   DateTimePickerAndroid,
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { AnimatedPressable } from './AnimatedPressable';
-import { colors, spacing, radius, typography } from '../core/theme/theme';
+import { useTheme } from '../core/theme/useTheme';
+import type {
+  ThemeColors,
+  Typography,
+  SpacingTokens,
+  RadiusTokens,
+} from '../core/theme/theme';
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -45,6 +51,12 @@ interface TimePickerFieldProps {
 export function TimePickerField({ value, onChange }: TimePickerFieldProps) {
   const [visible, setVisible] = useState(false);
   const [draftDate, setDraftDate] = useState<Date>(() => timeStringToDate(value));
+
+  const { colors, spacing, radius, typography } = useTheme();
+  const styles = useMemo(
+    () => makeStyles(colors, spacing, radius, typography),
+    [colors, spacing, radius, typography]
+  );
 
   function openPicker() {
     if (Platform.OS === 'android') {
@@ -113,7 +125,13 @@ export function TimePickerField({ value, onChange }: TimePickerFieldProps) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  colors: ThemeColors,
+  spacing: SpacingTokens,
+  radius: RadiusTokens,
+  typography: Typography
+) {
+  return StyleSheet.create({
   button: {
     alignSelf: 'flex-start',
     marginTop: spacing.sm,
@@ -167,4 +185,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.background,
   },
-});
+  });
+}

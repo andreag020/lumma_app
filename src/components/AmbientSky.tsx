@@ -20,7 +20,7 @@ import {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
-import { colors } from '../core/theme/theme';
+import { useTheme } from '../core/theme/useTheme';
 
 interface LightSpec {
   baseX: number;
@@ -37,10 +37,12 @@ interface LightSpec {
   twinkleDelay: number;
 }
 
-// Solo acentos de luz de la paleta de marca — nunca colores nuevos.
-const LIGHT_COLORS = [colors.gold, colors.lavender, colors.lime, colors.ivory];
-
-function makeLights(width: number, height: number, count: number): LightSpec[] {
+function makeLights(
+  width: number,
+  height: number,
+  count: number,
+  lightColors: string[]
+): LightSpec[] {
   const lights: LightSpec[] = [];
   for (let i = 0; i < count; i++) {
     lights.push({
@@ -49,7 +51,7 @@ function makeLights(width: number, height: number, count: number): LightSpec[] {
       driftX: 24 + Math.random() * 32,
       driftY: 18 + Math.random() * 26,
       radius: 1.3 + Math.random() * 2,
-      color: LIGHT_COLORS[i % LIGHT_COLORS.length],
+      color: lightColors[i % lightColors.length],
       // Duraciones distintas en X e Y (más un desfase de arranque) para
       // que la trayectoria sea un vaivén, no una diagonal recta — se
       // siente más parecido al vuelo errático de una luciérnaga.
@@ -67,7 +69,7 @@ function makeLights(width: number, height: number, count: number): LightSpec[] {
   return lights;
 }
 
-function FloatingLight({ light }: { light: LightSpec }) {
+function FloatingLight({ light, coreColor }: { light: LightSpec; coreColor: string }) {
   const progressX = useSharedValue(0);
   const progressY = useSharedValue(0);
   const twinkle = useSharedValue(0);
@@ -129,7 +131,7 @@ function FloatingLight({ light }: { light: LightSpec }) {
         cx={cx}
         cy={cy}
         r={light.radius * 0.4}
-        color={colors.ivory}
+        color={coreColor}
         opacity={coreOpacity}
       >
         <BlurMask blur={0.5} style="normal" />
@@ -194,10 +196,14 @@ function ConstellationGroup({
   width,
   height,
   onCycleEnd,
+  lineColor,
+  pointColor,
 }: {
   width: number;
   height: number;
   onCycleEnd: () => void;
+  lineColor: string;
+  pointColor: string;
 }) {
   const spec = useMemo(() => makeConstellationSpec(width, height), [width, height]);
   const opacity = useSharedValue(0);
@@ -249,12 +255,12 @@ function ConstellationGroup({
           key={`seg-${i}`}
           p1={vec(spec.points[i].dx, spec.points[i].dy)}
           p2={vec(p.dx, p.dy)}
-          color={colors.constellationLine}
+          color={lineColor}
           strokeWidth={0.7}
         />
       ))}
       {spec.points.map((p, i) => (
-        <Circle key={`pt-${i}`} cx={p.dx} cy={p.dy} r={1.7} color={colors.ivory}>
+        <Circle key={`pt-${i}`} cx={p.dx} cy={p.dy} r={1.7} color={pointColor}>
           <BlurMask blur={1.1} style="normal" />
         </Circle>
       ))}
@@ -294,9 +300,15 @@ interface AmbientSkyProps {
  */
 export function AmbientSky({ density = 14 }: AmbientSkyProps) {
   const { width, height } = useWindowDimensions();
+  const { colors } = useTheme();
+  // Solo acentos de luz de la paleta del tema activo — nunca colores nuevos.
+  const lightColors = useMemo(
+    () => [colors.gold, colors.lavender, colors.lime, colors.ivory],
+    [colors]
+  );
   const lights = useMemo(
-    () => makeLights(width, height, density),
-    [width, height, density]
+    () => makeLights(width, height, density, lightColors),
+    [width, height, density, lightColors]
   );
   const [slotKeys, setSlotKeys] = useState<number[]>(makeSlotKeys);
 
@@ -326,10 +338,12 @@ export function AmbientSky({ density = 14 }: AmbientSkyProps) {
             width={width}
             height={height}
             onCycleEnd={() => respawnSlot(i)}
+            lineColor={colors.constellationLine}
+            pointColor={colors.ivory}
           />
         ))}
         {lights.map((light, i) => (
-          <FloatingLight key={i} light={light} />
+          <FloatingLight key={i} light={light} coreColor={colors.ivory} />
         ))}
       </Canvas>
     </View>

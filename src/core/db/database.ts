@@ -78,6 +78,20 @@ export async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
       PRAGMA user_version = 2;
     `);
   }
+
+  if (currentVersion < 3) {
+    // Selección de tema visual + desbloqueo (compra única que también
+    // quita los anuncios, ver ads_config). 'indigo' es el tema incluido.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS theme_config (
+        id                 INTEGER PRIMARY KEY CHECK (id = 1),
+        selected_theme_id  TEXT NOT NULL DEFAULT 'indigo',
+        unlocked           INTEGER NOT NULL DEFAULT 0
+      );
+
+      PRAGMA user_version = 3;
+    `);
+  }
 }
 
 /** Borra todos los datos de la usuaria (ajustes → "borrar mis datos"). */
@@ -87,6 +101,7 @@ export async function wipeAllData(): Promise<void> {
     DELETE FROM profile;
     DELETE FROM daily_entry;
     DELETE FROM ads_config;
+    DELETE FROM theme_config;
   `);
 }
 

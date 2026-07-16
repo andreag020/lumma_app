@@ -4,3 +4,4 @@ export * from './dailyEntry';
 export * from './dailyContent';
 export * from './adsConfig';
 export * from './moodPalette';
+export * from './themeConfig';
