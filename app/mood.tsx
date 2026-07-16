@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,13 @@ import { generateLocalId } from '../src/core/utils/id';
 import { AmbientSky } from '../src/components/AmbientSky';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
 import { MOOD_PALETTE } from '../src/models';
-import { colors, spacing, radius, typography } from '../src/core/theme/theme';
+import { useTheme } from '../src/core/theme/useTheme';
+import type {
+  ThemeColors,
+  Typography,
+  SpacingTokens,
+  RadiusTokens,
+} from '../src/core/theme/theme';
 
 /** Registro de ánimo del día: color + etiqueta (paleta fija) + nota opcional.
  * Un registro por fecha — reabrir esta pantalla el mismo día edita el
@@ -30,6 +36,12 @@ export default function Mood() {
   const [note, setNote] = useState('');
   const [contentId, setContentId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const { colors, spacing, radius, typography } = useTheme();
+  const styles = useMemo(
+    () => makeStyles(colors, spacing, radius, typography),
+    [colors, spacing, radius, typography]
+  );
 
   const today = todayISODate();
 
@@ -160,7 +172,13 @@ export default function Mood() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  colors: ThemeColors,
+  spacing: SpacingTokens,
+  radius: RadiusTokens,
+  typography: Typography
+) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
@@ -255,4 +273,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.background,
   },
-});
+  });
+}

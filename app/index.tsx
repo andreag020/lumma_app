@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, Link, useFocusEffect } from 'expo-router';
@@ -15,8 +15,14 @@ import {
   ZODIAC_SYMBOLS,
   type DailyContent,
 } from '../src/models';
-import { colors, spacing, radius, typography } from '../src/core/theme/theme';
-import { fonts } from '../src/core/theme/fonts';
+import { useTheme } from '../src/core/theme/useTheme';
+import type {
+  ThemeColors,
+  ThemeFonts,
+  Typography,
+  SpacingTokens,
+  RadiusTokens,
+} from '../src/core/theme/theme';
 
 /** Home: astrología del día + frase, o redirección a onboarding sin perfil. */
 export default function Index() {
@@ -30,6 +36,12 @@ export default function Index() {
   // pantalla se actualiza sola porque ambas leen el mismo estado global.
   const todayEntry = useEntryStore((s) => s.entry);
   const loadEntry = useEntryStore((s) => s.loadByDate);
+
+  const { colors, spacing, radius, typography, fonts } = useTheme();
+  const styles = useMemo(
+    () => makeStyles(colors, spacing, radius, typography, fonts),
+    [colors, spacing, radius, typography, fonts]
+  );
 
   // Cambia en cada enfoque de la pantalla (no solo al montar) para volver
   // a montar el bloque animado de abajo y así repetir la entrada
@@ -167,7 +179,14 @@ export default function Index() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  colors: ThemeColors,
+  spacing: SpacingTokens,
+  radius: RadiusTokens,
+  typography: Typography,
+  fonts: ThemeFonts
+) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
@@ -291,4 +310,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.lavender,
   },
-});
+  });
+}
