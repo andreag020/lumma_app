@@ -19,6 +19,7 @@ import {
   scheduleDailyPhraseReminder,
   scheduleMoodReminder,
 } from '../src/services/notificationService';
+import { AdBanner } from '../src/components/AdBanner';
 import { AmbientSky } from '../src/components/AmbientSky';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
 import { TimePickerField } from '../src/components/TimePickerField';
@@ -28,9 +29,11 @@ import {
   ZODIAC_SYMBOLS,
   type ZodiacSign,
   type Profile,
+  type Language,
 } from '../src/models';
 import { useTheme } from '../src/core/theme/useTheme';
 import { THEMES, type ThemeId } from '../src/core/theme/theme';
+import { useTranslation } from '../src/core/i18n/useTranslation';
 import type {
   ThemeColors,
   Typography,
@@ -62,7 +65,9 @@ export default function Settings() {
   const [phraseTime, setPhraseTime] = useState('08:00');
   const [moodEnabled, setMoodEnabled] = useState(false);
   const [moodTime, setMoodTime] = useState('21:00');
+  const [language, setLanguage] = useState<Language>('es');
   const [saving, setSaving] = useState(false);
+  const { t } = useTranslation(language);
 
   // Precarga el formulario con el perfil actual una vez que llega.
   useEffect(() => {
@@ -72,6 +77,7 @@ export default function Settings() {
     setPhraseTime(profile.notificationTime);
     setMoodEnabled(profile.moodReminderEnabled);
     setMoodTime(profile.moodReminderTime ?? '21:00');
+    setLanguage(profile.language);
   }, [profile]);
 
   if (!profile || !sign) {
@@ -89,6 +95,7 @@ export default function Settings() {
         notificationTime: phraseTime,
         moodReminderEnabled: moodEnabled,
         moodReminderTime: moodEnabled ? moodTime : null,
+        language,
       };
       await save(updated);
       // No bloquea el guardado si el permiso de notificaciones falla.
@@ -124,12 +131,12 @@ export default function Settings() {
 
   function handleWipe() {
     Alert.alert(
-      'Borrar todos mis datos',
-      'Esto elimina tu perfil, tus registros de ánimo y tus ajustes de este teléfono. No se puede deshacer.',
+      t('wipeAlertTitle'),
+      t('wipeAlertMessage'),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('wipeAlertCancel'), style: 'cancel' },
         {
-          text: 'Borrar todo',
+          text: t('wipeAlertConfirm'),
           style: 'destructive',
           onPress: async () => {
             await wipeAllData();
@@ -157,24 +164,48 @@ export default function Settings() {
               <AnimatedPressable onPress={() => router.back()} style={styles.back}>
                 <Text style={styles.backText}>{'‹'}</Text>
               </AnimatedPressable>
-              <Text style={styles.title}>Ajustes</Text>
+              <Text style={styles.title}>{t('settingsTitle')}</Text>
             </View>
 
-            <Text style={styles.sectionTitle}>Mi cuenta</Text>
+            <Text style={styles.sectionTitle}>{t('languageLabel')}</Text>
+            <View style={styles.grid}>
+              {(['es', 'en'] as const).map((lang) => {
+                const selected = lang === language;
+                return (
+                  <AnimatedPressable
+                    key={lang}
+                    onPress={() => setLanguage(lang)}
+                    style={[styles.signChip, selected && styles.signChipSelected]}
+                  >
+                    <Text
+                      style={[
+                        styles.signChipText,
+                        selected && styles.signChipTextSelected,
+                      ]}
+                    >
+                      {lang === 'es' ? t('languageSpanish') : t('languageEnglish')}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </View>
+
+            <Text style={styles.sectionTitle}>{t('sectionAccount')}</Text>
 
             <Text style={styles.sectionLabel}>
-              ¿Cómo te llamamos? <Text style={styles.optional}>(opcional)</Text>
+              {t('onboardingNicknameQuestion')}{' '}
+              <Text style={styles.optional}>{t('optional')}</Text>
             </Text>
             <TextInput
               value={nickname}
               onChangeText={setNickname}
-              placeholder="Tu nombre"
+              placeholder={t('nicknamePlaceholder')}
               placeholderTextColor={colors.textMuted}
               style={styles.input}
               maxLength={40}
             />
 
-            <Text style={styles.sectionLabel}>Tu signo</Text>
+            <Text style={styles.sectionLabel}>{t('sectionSign')}</Text>
             <View style={styles.grid}>
               {ZODIAC_SIGNS.map((s) => {
                 const selected = s === sign;
@@ -195,23 +226,19 @@ export default function Settings() {
                         selected && styles.signChipTextSelected,
                       ]}
                     >
-                      {ZODIAC_LABELS[s]}
+                      {ZODIAC_LABELS[language][s]}
                     </Text>
                   </AnimatedPressable>
                 );
               })}
             </View>
 
-            <Text style={styles.sectionLabel}>
-              Recordatorio de tu lectura diaria
-            </Text>
+            <Text style={styles.sectionLabel}>{t('sectionPhraseReminder')}</Text>
             <TimePickerField value={phraseTime} onChange={setPhraseTime} />
 
-            <Text style={styles.sectionTitle}>Recordatorio de ánimo</Text>
+            <Text style={styles.sectionTitle}>{t('sectionMoodReminder')}</Text>
             <View style={styles.switchRow}>
-              <Text style={styles.switchLabel}>
-                Recibir un recordatorio para registrar mi ánimo
-              </Text>
+              <Text style={styles.switchLabel}>{t('moodReminderSwitchLabel')}</Text>
               <Switch
                 value={moodEnabled}
                 onValueChange={setMoodEnabled}
@@ -229,7 +256,7 @@ export default function Settings() {
               style={[styles.cta, saving && styles.ctaDisabled]}
             >
               <Text style={styles.ctaText}>
-                {saving ? 'Guardando…' : 'Guardar cambios'}
+                {saving ? t('saving') : t('saveChanges')}
               </Text>
             </AnimatedPressable>
 
@@ -240,35 +267,35 @@ export default function Settings() {
                 : 'Índigo Nocturno viene incluido. Un solo pago único desbloquea los otros 3 temas y quita los anuncios.'}
             </Text>
             <View style={styles.themeGrid}>
-              {Object.values(THEMES).map((t) => {
-                const selected = t.id === selectedThemeId;
-                const locked = !t.free && !themeUnlocked;
+              {Object.values(THEMES).map((theme) => {
+                const selected = theme.id === selectedThemeId;
+                const locked = !theme.free && !themeUnlocked;
                 return (
                   <AnimatedPressable
-                    key={t.id}
-                    onPress={() => handleThemePress(t.id)}
+                    key={theme.id}
+                    onPress={() => handleThemePress(theme.id)}
                     style={[styles.themeCard, selected && styles.themeCardSelected]}
                   >
                     <View style={styles.themeSwatchRow}>
-                      <View style={[styles.themeSwatch, { backgroundColor: t.colors.gold }]} />
+                      <View style={[styles.themeSwatch, { backgroundColor: theme.colors.gold }]} />
                       <View
                         style={[
                           styles.themeSwatch,
                           styles.themeSwatchOverlap,
-                          { backgroundColor: t.colors.lime },
+                          { backgroundColor: theme.colors.lime },
                         ]}
                       />
                       <View
                         style={[
                           styles.themeSwatch,
                           styles.themeSwatchOverlap,
-                          { backgroundColor: t.colors.lavender },
+                          { backgroundColor: theme.colors.lavender },
                         ]}
                       />
                     </View>
-                    <Text style={styles.themeName}>{t.name}</Text>
+                    <Text style={styles.themeName}>{theme.name}</Text>
                     <Text style={styles.themeTag}>
-                      {selected ? 'Actual' : locked ? `🔒 ${t.tag}` : t.tag}
+                      {selected ? 'Actual' : locked ? `🔒 ${theme.tag}` : theme.tag}
                     </Text>
                   </AnimatedPressable>
                 );
@@ -282,15 +309,13 @@ export default function Settings() {
               </AnimatedPressable>
             )}
 
-            <Text style={styles.sectionTitle}>Privacidad y datos</Text>
-            <Text style={styles.privacy}>
-              Todo lo que registras (perfil, ánimo, ajustes) se guarda solo en
-              este teléfono. Lumma no tiene cuentas ni servidor: nada de esto
-              sale de tu dispositivo.
-            </Text>
+            <Text style={styles.sectionTitle}>{t('sectionPrivacy')}</Text>
+            <Text style={styles.privacy}>{t('privacyBody')}</Text>
+
             <AnimatedPressable onPress={handleWipe} style={styles.danger}>
-              <Text style={styles.dangerText}>Borrar todos mis datos</Text>
+              <Text style={styles.dangerText}>{t('wipeButton')}</Text>
             </AnimatedPressable>
+            <AdBanner />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>

@@ -33,10 +33,12 @@ import {
   type FirmamentPoint,
 } from '../src/features/firmament/layout';
 import type { DailyEntry } from '../src/models';
+import { AdBanner } from '../src/components/AdBanner';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
-import { formatLongDateEs } from '../src/core/utils/date';
+import { formatLongDate } from '../src/core/utils/date';
 import { hexToRgba } from '../src/core/utils/color';
 import { useTheme } from '../src/core/theme/useTheme';
+import { useTranslation } from '../src/core/i18n/useTranslation';
 import type {
   ThemeColors,
   Typography,
@@ -62,6 +64,7 @@ function clamp(value: number, min: number, max: number) {
 const FIRST_YEAR = 2024;
 
 export default function Firmament() {
+  const { t, language } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
   const [entries, setEntries] = useState<DailyEntry[] | null>(null);
   const currentYear = new Date().getFullYear();
@@ -215,10 +218,10 @@ export default function Firmament() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={styles.back}>‹ Volver</Text>
+          <Text style={styles.back}>{t('back')}</Text>
         </Pressable>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Tu firmamento</Text>
+          <Text style={styles.title}>{t('firmamentTitle')}</Text>
           <AnimatedPressable
             onPress={() => setPickerOpen(true)}
             style={styles.yearButton}
@@ -228,10 +231,10 @@ export default function Firmament() {
         </View>
         <Text style={styles.subtitle}>
           {entries === null
-            ? 'Cargando…'
-            : `${points.length} ${
-                points.length === 1 ? 'noche registrada' : 'noches registradas'
-              }`}
+            ? t('loading')
+            : points.length === 1
+              ? t('nightsRegisteredOne')
+              : t('nightsRegisteredMany', { count: points.length })}
         </Text>
       </View>
 
@@ -247,7 +250,7 @@ export default function Firmament() {
             onPress={() => setPickerOpen(false)}
           >
             <Pressable style={styles.modalCard} onPress={() => {}}>
-              <Text style={styles.modalTitle}>Elige un año</Text>
+              <Text style={styles.modalTitle}>{t('chooseYear')}</Text>
               <ScrollView style={styles.modalList}>
                 {yearOptions.map((y) => {
                   const selected = y === year;
@@ -327,6 +330,8 @@ export default function Firmament() {
         </ScrollView>
       )}
 
+      <AdBanner />
+
       <Modal
         visible={selectedPoint !== null}
         transparent
@@ -341,7 +346,7 @@ export default function Firmament() {
           {selectedPoint && (
             <Pressable style={styles.detailCard} onPress={() => {}}>
               <Text style={styles.detailDate}>
-                {formatLongDateEs(selectedPoint.date)}
+                {formatLongDate(selectedPoint.date, language)}
               </Text>
               <View style={styles.detailMoodRow}>
                 <View
@@ -350,13 +355,13 @@ export default function Firmament() {
                 <Text style={styles.detailMoodLabel}>{selectedPoint.label}</Text>
               </View>
               <Text style={styles.detailNote}>
-                {selectedPoint.note ?? 'Sin nota ese día.'}
+                {selectedPoint.note ?? t('noNoteThatDay')}
               </Text>
               <AnimatedPressable
                 onPress={() => setSelectedPoint(null)}
                 style={styles.detailClose}
               >
-                <Text style={styles.detailCloseText}>Cerrar</Text>
+                <Text style={styles.detailCloseText}>{t('close')}</Text>
               </AnimatedPressable>
             </Pressable>
           )}

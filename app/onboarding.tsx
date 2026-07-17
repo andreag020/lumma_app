@@ -20,8 +20,11 @@ import {
   ZODIAC_LABELS,
   ZODIAC_SYMBOLS,
   type ZodiacSign,
+  type Language,
 } from '../src/models';
 import { useTheme } from '../src/core/theme/useTheme';
+import { useTranslation } from '../src/core/i18n/useTranslation';
+import { detectDeviceLanguage } from '../src/core/i18n/device';
 import type {
   ThemeColors,
   Typography,
@@ -37,6 +40,10 @@ export default function Onboarding() {
   const [time, setTime] = useState('08:00');
   const [nickname, setNickname] = useState('');
   const [saving, setSaving] = useState(false);
+  // Sin perfil todavía: el idioma parte del dispositivo y se puede
+  // cambiar aquí mismo; a partir de "Comenzar mi ritual" vive en el perfil.
+  const [language, setLanguage] = useState<Language>(() => detectDeviceLanguage());
+  const { t } = useTranslation(language);
 
   const { colors, spacing, radius, typography } = useTheme();
   const styles = useMemo(
@@ -58,7 +65,7 @@ export default function Onboarding() {
         notificationTime: time,
         moodReminderEnabled: false,
         moodReminderTime: null,
-        language: 'es',
+        language,
         enabledModules: DEFAULT_MODULES,
         themePreferences: {},
       });
@@ -80,14 +87,33 @@ export default function Onboarding() {
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.eyebrow}>Bienvenida a Lumma</Text>
-            <Text style={styles.title}>Tu ritual nocturno empieza aquí</Text>
-            <Text style={styles.lede}>
-              Solo dos cosas antes de tu primer firmamento: tu signo y a qué
-              hora quieres tu recordatorio.
-            </Text>
+            <View style={styles.languageRow}>
+              {(['es', 'en'] as const).map((lang) => {
+                const selected = lang === language;
+                return (
+                  <AnimatedPressable
+                    key={lang}
+                    onPress={() => setLanguage(lang)}
+                    style={[styles.languageChip, selected && styles.languageChipSelected]}
+                  >
+                    <Text
+                      style={[
+                        styles.languageChipText,
+                        selected && styles.languageChipTextSelected,
+                      ]}
+                    >
+                      {lang === 'es' ? t('languageSpanish') : t('languageEnglish')}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </View>
 
-            <Text style={styles.sectionLabel}>¿Cuál es tu signo?</Text>
+            <Text style={styles.eyebrow}>{t('onboardingEyebrow')}</Text>
+            <Text style={styles.title}>{t('onboardingTitle')}</Text>
+            <Text style={styles.lede}>{t('onboardingLede')}</Text>
+
+            <Text style={styles.sectionLabel}>{t('onboardingSignQuestion')}</Text>
             <View style={styles.grid}>
               {ZODIAC_SIGNS.map((s) => {
                 const selected = s === sign;
@@ -111,35 +137,30 @@ export default function Onboarding() {
                         selected && styles.signChipTextSelected,
                       ]}
                     >
-                      {ZODIAC_LABELS[s]}
+                      {ZODIAC_LABELS[language][s]}
                     </Text>
                   </AnimatedPressable>
                 );
               })}
             </View>
 
-            <Text style={styles.sectionLabel}>
-              ¿Cuándo quieres tu recordatorio?
-            </Text>
+            <Text style={styles.sectionLabel}>{t('onboardingTimeQuestion')}</Text>
             <TimePickerField value={time} onChange={setTime} />
 
             <Text style={styles.sectionLabel}>
-              ¿Cómo te llamamos?{' '}
-              <Text style={styles.optional}>(opcional)</Text>
+              {t('onboardingNicknameQuestion')}{' '}
+              <Text style={styles.optional}>{t('optional')}</Text>
             </Text>
             <TextInput
               value={nickname}
               onChangeText={setNickname}
-              placeholder="Tu nombre"
+              placeholder={t('nicknamePlaceholder')}
               placeholderTextColor={colors.textMuted}
               style={styles.input}
               maxLength={40}
             />
 
-            <Text style={styles.privacy}>
-              Esto se guarda solo en tu teléfono. Puedes borrarlo cuando
-              quieras desde Ajustes.
-            </Text>
+            <Text style={styles.privacy}>{t('onboardingPrivacy')}</Text>
 
             <AnimatedPressable
               onPress={handleContinue}
@@ -147,7 +168,7 @@ export default function Onboarding() {
               style={[styles.cta, !canContinue && styles.ctaDisabled]}
             >
               <Text style={styles.ctaText}>
-                {saving ? 'Guardando…' : 'Comenzar mi ritual'}
+                {saving ? t('onboardingSaving') : t('onboardingCta')}
               </Text>
             </AnimatedPressable>
           </ScrollView>
@@ -174,6 +195,31 @@ function makeStyles(
   scroll: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  languageRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  languageChip: {
+    paddingVertical: spacing.xs / 2,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  languageChipSelected: {
+    borderColor: colors.gold,
+    backgroundColor: colors.surfaceMuted,
+  },
+  languageChipText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  languageChipTextSelected: {
+    color: colors.gold,
+    fontWeight: '600',
   },
   eyebrow: {
     ...typography.caption,

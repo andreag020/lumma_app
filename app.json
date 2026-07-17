@@ -8,11 +8,32 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0E0B1A",
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-2316901851284710~3657504513",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "delayAppMeasurementInit": true,
+          "userTrackingUsageDescription": "Este identificador se usa para mostrar anuncios más relevantes."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraProguardRules": "-keep class com.google.android.gms.internal.consent_sdk.** { *; }"
+          }
+        }
+      ]
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lumma.app"
     },
     "android": {
+      "package": "com.lumma.app",
       "adaptiveIcon": {
         "backgroundColor": "#0E0B1A",
         "foregroundImage": "./assets/android-icon-foreground.png",
