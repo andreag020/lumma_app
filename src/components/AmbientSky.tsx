@@ -4,6 +4,7 @@ import {
   Canvas,
   Circle,
   Line,
+  Oval,
   Path,
   Group,
   BlurMask,
@@ -175,17 +176,19 @@ function FloatingLight({
   const cy = useDerivedValue(() => light.baseY - progressY.value * light.driftY);
   // El titileo domina la intensidad — desplazamiento y brillo ya no están
   // atados al mismo reloj, así que la luz parpadea aunque esté quieta.
-  const haloOpacity = useDerivedValue(() => 0.22 + twinkle.value * 0.58);
-  const coreOpacity = useDerivedValue(() => 0.5 + twinkle.value * 0.5);
-  // Piso de opacidad más alto para luciérnagas y pétalos — deben notarse
+  // Luciérnagas y pétalos parten de un piso más alto: deben notarse
   // incluso en el valle del titileo, no solo en el pico.
-  const haloOpacityBoosted = useDerivedValue(() => 0.34 + twinkle.value * 0.6);
-  const coreOpacityBoosted = useDerivedValue(() => 0.62 + twinkle.value * 0.38);
+  const boosted = particleStyle === 'firefly' || particleStyle === 'petal';
+  const haloFloor = boosted ? 0.34 : 0.22;
+  const haloRange = boosted ? 0.6 : 0.58;
+  const coreFloor = boosted ? 0.62 : 0.5;
+  const coreRange = boosted ? 0.38 : 0.5;
+  const haloOpacity = useDerivedValue(() => haloFloor + twinkle.value * haloRange);
+  const coreOpacity = useDerivedValue(() => coreFloor + twinkle.value * coreRange);
   const rotation = useDerivedValue(
     () => spin.value * Math.PI * 2 * light.rotationDirection
   );
-  const wingAngle = useDerivedValue(() => (flap.value - 0.5) * 1.1);
-  const wingAngleMirrored = useDerivedValue(() => -wingAngle.value);
+  const wingAngle = useDerivedValue(() => (flap.value - 0.5) * 0.9);
 
   const groupTransform = useDerivedValue(() => [
     { translateX: cx.value },
@@ -193,36 +196,53 @@ function FloatingLight({
   ]);
   const petalTransform = useDerivedValue(() => [{ rotate: rotation.value }]);
   const snowflakeTransform = useDerivedValue(() => [{ rotate: rotation.value }]);
-  const wingLeftLength = light.radius * 3.6;
-  const wingRightTip = useDerivedValue(() =>
-    vec(
-      Math.cos(wingAngle.value) * wingLeftLength,
-      -Math.sin(wingAngle.value) * (light.radius * 1.5) - light.radius * 0.5
-    )
-  );
-  const wingLeftTip = useDerivedValue(() =>
-    vec(
-      -Math.cos(wingAngleMirrored.value) * wingLeftLength,
-      -Math.sin(wingAngleMirrored.value) * (light.radius * 1.5) - light.radius * 0.5
-    )
-  );
+  // Alas cortas y redondeadas (óvalos), con bisagra en el punto donde
+  // tocan el cuerpo — no líneas finas. En reposo quedan entreabiertas
+  // hacia atrás; el aleteo las abre y cierra sobre ese mismo punto.
+  const wingWidth = light.radius * 1.5;
+  const wingHeight = light.radius * 1.05;
+  const wingRestAngle = 0.4;
+  const leftWingTransform = useDerivedValue(() => [
+    { rotate: -wingRestAngle - wingAngle.value },
+  ]);
+  const rightWingTransform = useDerivedValue(() => [
+    { rotate: wingRestAngle + wingAngle.value },
+  ]);
 
   if (particleStyle === 'firefly') {
     return (
       <Group transform={groupTransform}>
         {/* Halo cálido, notablemente más amplio que el de una estrella común. */}
-        <Circle cx={0} cy={0} r={light.radius * 1.7} color={light.color} opacity={haloOpacityBoosted}>
+        <Circle cx={0} cy={0} r={light.radius * 1.7} color={light.color} opacity={haloOpacity}>
           <BlurMask blur={light.radius * 2.4} style="normal" />
         </Circle>
-        {/* Alas finas y translúcidas que aletean. */}
-        <Line p1={vec(0, -light.radius * 0.25)} p2={wingLeftTip} color={coreColor} opacity={0.55} strokeWidth={0.85}>
-          <BlurMask blur={0.6} style="normal" />
-        </Line>
-        <Line p1={vec(0, -light.radius * 0.25)} p2={wingRightTip} color={coreColor} opacity={0.55} strokeWidth={0.85}>
-          <BlurMask blur={0.6} style="normal" />
-        </Line>
+        {/* Alas cortas y redondeadas que aletean desde el cuerpo. */}
+        <Group transform={leftWingTransform}>
+          <Oval
+            x={-wingWidth}
+            y={-wingHeight / 2}
+            width={wingWidth}
+            height={wingHeight}
+            color={coreColor}
+            opacity={0.5}
+          >
+            <BlurMask blur={0.5} style="normal" />
+          </Oval>
+        </Group>
+        <Group transform={rightWingTransform}>
+          <Oval
+            x={0}
+            y={-wingHeight / 2}
+            width={wingWidth}
+            height={wingHeight}
+            color={coreColor}
+            opacity={0.5}
+          >
+            <BlurMask blur={0.5} style="normal" />
+          </Oval>
+        </Group>
         {/* Núcleo: el destello real de la luciérnaga. */}
-        <Circle cx={0} cy={0} r={light.radius * 0.55} color={coreColor} opacity={coreOpacityBoosted}>
+        <Circle cx={0} cy={0} r={light.radius * 0.55} color={coreColor} opacity={coreOpacity}>
           <BlurMask blur={0.5} style="normal" />
         </Circle>
       </Group>
@@ -232,14 +252,14 @@ function FloatingLight({
   if (particleStyle === 'petal') {
     return (
       <Group transform={groupTransform}>
-        <Circle cx={0} cy={0} r={light.radius * 1.3} color={light.color} opacity={haloOpacityBoosted}>
+        <Circle cx={0} cy={0} r={light.radius * 1.3} color={light.color} opacity={haloOpacity}>
           <BlurMask blur={light.radius * 1.8} style="normal" />
         </Circle>
         <Group transform={petalTransform}>
           <Path
             path={PETAL_PATH}
             color={light.color}
-            opacity={coreOpacityBoosted}
+            opacity={coreOpacity}
             transform={[{ scale: light.radius * 2 }]}
           >
             <BlurMask blur={0.4} style="normal" />
