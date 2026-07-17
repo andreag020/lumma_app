@@ -75,7 +75,7 @@ export const STRINGS = {
     notifPhraseTitle: '{{sign}} · tu lectura de hoy',
     notifPhraseChannelName: 'Frase diaria',
     notifMoodChannelName: 'Recordatorio de ánimo',
-    notifMoodTitle: 'Tu momento de calma',
+    notifMoodTitle: 'Tu ritual diario',
     notifMoodBody: '¿Cómo te sientes hoy? Registra tu ánimo en Lumma.',
   },
   en: {
@@ -149,7 +149,7 @@ export const STRINGS = {
     notifPhraseTitle: "{{sign}} · your reading for today",
     notifPhraseChannelName: 'Daily reading',
     notifMoodChannelName: 'Mood reminder',
-    notifMoodTitle: 'Your moment of calm',
+    notifMoodTitle: 'Your daily ritual',
     notifMoodBody: 'How do you feel today? Log your mood in Lumma.',
   },
 } satisfies Record<Language, Record<string, string>>;
