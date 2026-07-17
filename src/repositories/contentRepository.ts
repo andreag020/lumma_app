@@ -59,12 +59,3 @@ export async function getContentForSign(
   );
   return rows.map(dailyContentFromRow);
 }
-
-/** Número de filas de contenido cargadas (para decidir si sembrar). */
-export async function countContent(): Promise<number> {
-  const db = await getDb();
-  const row = await db.getFirstAsync<{ n: number }>(
-    'SELECT COUNT(*) AS n FROM daily_content'
-  );
-  return row?.n ?? 0;
-}

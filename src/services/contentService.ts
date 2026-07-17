@@ -1,13 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
 import {
   bulkInsertContent,
-  countContent,
   getContent,
   getContentForSign,
 } from '../repositories/contentRepository';
 import type { DailyContent, Language, ZodiacSign } from '../models';
 import { DEFAULT_LANGUAGE } from '../models';
-import { dayOfYear, todayISODate } from '../core/utils/date';
+import { todayISODate } from '../core/utils/date';
 // Contenido empaquetado como asset (generado offline por lotes con Claude
 // Haiku 4.5; ver scripts/generate-content.mjs). Respaldo para el primer
 // arranque sin red — nunca llama a la API en runtime.
@@ -20,11 +19,13 @@ const CONTENT = (bundledContent as Array<Partial<DailyContent>>).map(
   (item) => ({ language: DEFAULT_LANGUAGE, ...item })
 ) as DailyContent[];
 
-/** Siembra el contenido empaquetado en SQLite si aún no está cargado.
- * Idempotente: se puede llamar en cada arranque. */
+/** Siembra el contenido empaquetado en SQLite. `bulkInsertContent` hace
+ * INSERT OR REPLACE por `content_id`, así que llamarlo en cada arranque es
+ * barato (12 filas) y además re-sincroniza el contenido si el asset vino
+ * actualizado en una nueva versión de la app — antes se saltaba esto en
+ * cuanto la base ya tenía suficientes filas, así que un dispositivo con
+ * datos viejos nunca recibía el contenido nuevo empaquetado. */
 export async function seedContent(): Promise<void> {
-  const existing = await countContent();
-  if (existing >= CONTENT.length) return;
   await bulkInsertContent(CONTENT);
 }
 
@@ -74,9 +75,9 @@ export async function refreshRemoteContent(): Promise<void> {
 /**
  * Devuelve el contenido del día para un signo e idioma.
  * 1) Coincidencia exacta de fecha (en el idioma pedido).
- * 2) Respaldo determinista: rota entre el contenido disponible del signo
- *    en ese idioma según el día del año, para que siempre haya algo que
- *    mostrar aunque el contenido empaquetado no cubra la fecha de hoy.
+ * 2) Respaldo: la fecha disponible más cercana a hoy (nunca una fecha
+ *    vieja al azar), para que siempre haya algo que mostrar aunque el
+ *    contenido empaquetado/sincronizado no cubra exactamente hoy.
  * 3) Si el idioma pedido aún no tiene contenido generado (p. ej. inglés
  *    recién habilitado, a la espera del próximo lote semanal), se cae de
  *    vuelta al español antes que mostrar la pantalla vacía.
@@ -91,12 +92,21 @@ export async function getDailyContent(
 
   const forSign = await getContentForSign(sign, language);
   if (forSign.length > 0) {
-    const index = dayOfYear(date) % forSign.length;
-    return forSign[index];
+    return closestByDate(forSign, date);
   }
 
   if (language !== DEFAULT_LANGUAGE) {
     return getDailyContent(date, sign, DEFAULT_LANGUAGE);
   }
   return null;
+}
+
+function closestByDate(items: DailyContent[], date: string): DailyContent {
+  const target = new Date(date).getTime();
+  return items.reduce((closest, item) =>
+    Math.abs(new Date(item.date).getTime() - target) <
+    Math.abs(new Date(closest.date).getTime() - target)
+      ? item
+      : closest
+  );
 }
