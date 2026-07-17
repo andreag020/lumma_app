@@ -1,6 +1,5 @@
 import { View, StyleSheet } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { getBannerAdUnitId } from '../services/adsService';
 import { useAdsStore } from '../stores/adsStore';
 import { spacing } from '../core/theme/theme';
@@ -10,6 +9,11 @@ import { spacing } from '../core/theme/theme';
  * principal). No renderiza nada hasta que `initAds()` confirme que hay
  * consentimiento y que la usuaria no tiene los anuncios desactivados, ni
  * tampoco en Expo Go (este módulo requiere un dev build).
+ *
+ * Importante: la librería nativa solo se `require()`-ea aquí abajo, DESPUÉS
+ * de confirmar que no estamos en Expo Go — un `import` estático de
+ * `react-native-google-mobile-ads` en la cabecera del archivo revienta al
+ * cargar el bundle en Expo Go, sin importar este chequeo.
  */
 export function AdBanner() {
   const ready = useAdsStore((s) => s.ready);
@@ -18,6 +22,9 @@ export function AdBanner() {
     Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
   if (isExpoGo || !ready || !canShowAds) return null;
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { BannerAd, BannerAdSize } = require('react-native-google-mobile-ads');
 
   return (
     <View style={styles.wrap}>

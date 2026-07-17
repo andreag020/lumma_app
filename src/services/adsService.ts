@@ -1,15 +1,33 @@
 import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import mobileAds, { AdsConsent, TestIds } from 'react-native-google-mobile-ads';
 import { getAdsConfig } from '../repositories/adsRepository';
 import { useAdsStore } from '../stores/adsStore';
 
 // Este módulo tiene código nativo (a diferencia del resto de Lumma), que
 // Expo Go no incluye — solo funciona en un dev build o en la app
-// publicada. En Expo Go, `initAds` no hace nada y `AdBanner` no renderiza
-// nada, para no romper el resto de la app mientras se prueba ahí.
+// publicada. Un `import` estático de la librería ya revienta al cargar el
+// bundle dentro de Expo Go (aunque nunca se llegue a usar), porque intenta
+// acceder al módulo nativo con solo importarla — por eso se carga con
+// `require()` diferido, y únicamente cuando NO estamos en Expo Go.
 function isExpoGo(): boolean {
   return Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+}
+
+type GoogleMobileAds = typeof import('react-native-google-mobile-ads');
+
+function loadGoogleMobileAds(): {
+  mobileAds: GoogleMobileAds['default'];
+  AdsConsent: GoogleMobileAds['AdsConsent'];
+  TestIds: GoogleMobileAds['TestIds'];
+} | null {
+  if (isExpoGo()) return null;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('react-native-google-mobile-ads');
+  return {
+    mobileAds: mod.default ?? mod,
+    AdsConsent: mod.AdsConsent,
+    TestIds: mod.TestIds,
+  };
 }
 
 // ID real de la unidad de anuncio banner de Lumma en AdMob (Android).
@@ -22,7 +40,8 @@ const PRODUCTION_BANNER_AD_UNIT_ID_ANDROID = 'ca-app-pub-2316901851284710/592856
 const PRODUCTION_BANNER_AD_UNIT_ID_IOS = 'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyy';
 
 export function getBannerAdUnitId(): string {
-  if (__DEV__) return TestIds.ADAPTIVE_BANNER;
+  const lib = loadGoogleMobileAds();
+  if (__DEV__ && lib) return lib.TestIds.ADAPTIVE_BANNER;
   return Platform.OS === 'ios'
     ? PRODUCTION_BANNER_AD_UNIT_ID_IOS
     : PRODUCTION_BANNER_AD_UNIT_ID_ANDROID;
@@ -50,7 +69,8 @@ const TEST_DEVICE_IDENTIFIERS: string[] = [];
  * los anuncios son un extra, jamás un requisito para usar Lumma.
  */
 export async function initAds(): Promise<void> {
-  if (isExpoGo()) return;
+  const lib = loadGoogleMobileAds();
+  if (!lib) return;
 
   try {
     const { adsRemoved } = await getAdsConfig();
@@ -59,20 +79,20 @@ export async function initAds(): Promise<void> {
       return;
     }
 
-    await AdsConsent.gatherConsent();
-    const { canRequestAds } = await AdsConsent.getConsentInfo();
+    await lib.AdsConsent.gatherConsent();
+    const { canRequestAds } = await lib.AdsConsent.getConsentInfo();
     if (!canRequestAds) {
       useAdsStore.getState().setCanShowAds(false);
       return;
     }
 
     if (TEST_DEVICE_IDENTIFIERS.length > 0) {
-      await mobileAds().setRequestConfiguration({
+      await lib.mobileAds().setRequestConfiguration({
         testDeviceIdentifiers: TEST_DEVICE_IDENTIFIERS,
       });
     }
 
-    await mobileAds().initialize();
+    await lib.mobileAds().initialize();
     useAdsStore.getState().setCanShowAds(true);
   } catch (err) {
     console.warn('No se pudo inicializar los anuncios', err);
