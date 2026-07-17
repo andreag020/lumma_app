@@ -4,6 +4,7 @@ import {
   Canvas,
   Circle,
   Line,
+  Path,
   Group,
   BlurMask,
   LinearGradient,
@@ -21,6 +22,7 @@ import {
   Easing,
 } from 'react-native-reanimated';
 import { useTheme } from '../core/theme/useTheme';
+import type { ParticleStyle } from '../core/theme/theme';
 
 interface LightSpec {
   baseX: number;
@@ -35,6 +37,11 @@ interface LightSpec {
   delayY: number;
   twinkleDuration: number;
   twinkleDelay: number;
+  /** Vuelta completa de giro — usada por 'petal' y 'snowflake'. */
+  rotationDuration: number;
+  rotationDirection: 1 | -1;
+  /** Aleteo rápido — usado por 'firefly'. */
+  wingFlapDuration: number;
 }
 
 function makeLights(
@@ -64,15 +71,33 @@ function makeLights(
       // una estrella y no solo "más brillante cuando se mueve más".
       twinkleDuration: 1400 + Math.random() * 2000,
       twinkleDelay: Math.random() * 1800,
+      rotationDuration: 7000 + Math.random() * 6000,
+      rotationDirection: Math.random() < 0.5 ? 1 : -1,
+      wingFlapDuration: 130 + Math.random() * 110,
     });
   }
   return lights;
 }
 
-function FloatingLight({ light, coreColor }: { light: LightSpec; coreColor: string }) {
+/** Contorno de un pétalo (forma de hoja/vesica), en espacio local -1..1,
+ * escalado luego con `scale` según el radio de cada partícula. */
+const PETAL_PATH =
+  'M 0 -1 C 0.55 -0.6 0.55 0.6 0 1 C -0.55 0.6 -0.55 -0.6 0 -1 Z';
+
+function FloatingLight({
+  light,
+  coreColor,
+  particleStyle,
+}: {
+  light: LightSpec;
+  coreColor: string;
+  particleStyle: ParticleStyle;
+}) {
   const progressX = useSharedValue(0);
   const progressY = useSharedValue(0);
   const twinkle = useSharedValue(0);
+  const spin = useSharedValue(0);
+  const flap = useSharedValue(0);
 
   useEffect(() => {
     progressX.value = withDelay(
@@ -97,17 +122,51 @@ function FloatingLight({ light, coreColor }: { light: LightSpec; coreColor: stri
         true
       )
     );
-    twinkle.value = withDelay(
-      light.twinkleDelay,
-      withRepeat(
+
+    if (particleStyle === 'firefly') {
+      // Destello rápido seguido de una pausa oscura más larga — el
+      // parpadeo característico de una luciérnaga, no un titileo suave.
+      twinkle.value = withDelay(
+        light.twinkleDelay,
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: 220, easing: Easing.out(Easing.quad) }),
+            withTiming(0.1, { duration: 900, easing: Easing.in(Easing.quad) }),
+            withTiming(0.05, { duration: light.twinkleDuration })
+          ),
+          -1,
+          false
+        )
+      );
+      flap.value = withRepeat(
         withTiming(1, {
-          duration: light.twinkleDuration,
-          easing: Easing.inOut(Easing.sin),
+          duration: light.wingFlapDuration,
+          easing: Easing.inOut(Easing.quad),
         }),
         -1,
         true
-      )
-    );
+      );
+    } else {
+      twinkle.value = withDelay(
+        light.twinkleDelay,
+        withRepeat(
+          withTiming(1, {
+            duration: light.twinkleDuration,
+            easing: Easing.inOut(Easing.sin),
+          }),
+          -1,
+          true
+        )
+      );
+    }
+
+    if (particleStyle === 'petal' || particleStyle === 'snowflake') {
+      spin.value = withRepeat(
+        withTiming(1, { duration: light.rotationDuration, easing: Easing.linear }),
+        -1,
+        false
+      );
+    }
     // Cada luz anima una sola vez al montar; no depende de props que cambien.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -118,25 +177,115 @@ function FloatingLight({ light, coreColor }: { light: LightSpec; coreColor: stri
   // atados al mismo reloj, así que la luz parpadea aunque esté quieta.
   const haloOpacity = useDerivedValue(() => 0.22 + twinkle.value * 0.58);
   const coreOpacity = useDerivedValue(() => 0.5 + twinkle.value * 0.5);
+  const rotation = useDerivedValue(
+    () => spin.value * Math.PI * 2 * light.rotationDirection
+  );
+  const wingAngle = useDerivedValue(() => (flap.value - 0.5) * 1.1);
+  const wingAngleMirrored = useDerivedValue(() => -wingAngle.value);
 
+  const groupTransform = useDerivedValue(() => [
+    { translateX: cx.value },
+    { translateY: cy.value },
+  ]);
+  const petalTransform = useDerivedValue(() => [{ rotate: rotation.value }]);
+  const snowflakeTransform = useDerivedValue(() => [{ rotate: rotation.value }]);
+  const wingLeftLength = light.radius * 2.6;
+  const wingRightTip = useDerivedValue(() =>
+    vec(
+      Math.cos(wingAngle.value) * wingLeftLength,
+      -Math.sin(wingAngle.value) * (light.radius * 1.1) - light.radius * 0.4
+    )
+  );
+  const wingLeftTip = useDerivedValue(() =>
+    vec(
+      -Math.cos(wingAngleMirrored.value) * wingLeftLength,
+      -Math.sin(wingAngleMirrored.value) * (light.radius * 1.1) - light.radius * 0.4
+    )
+  );
+
+  if (particleStyle === 'firefly') {
+    return (
+      <Group transform={groupTransform}>
+        {/* Halo cálido, más amplio que el de una estrella común. */}
+        <Circle cx={0} cy={0} r={light.radius * 1.15} color={light.color} opacity={haloOpacity}>
+          <BlurMask blur={light.radius * 2.2} style="normal" />
+        </Circle>
+        {/* Alas finas y translúcidas que aletean. */}
+        <Line p1={vec(0, -light.radius * 0.2)} p2={wingLeftTip} color={coreColor} opacity={0.35} strokeWidth={0.6}>
+          <BlurMask blur={0.6} style="normal" />
+        </Line>
+        <Line p1={vec(0, -light.radius * 0.2)} p2={wingRightTip} color={coreColor} opacity={0.35} strokeWidth={0.6}>
+          <BlurMask blur={0.6} style="normal" />
+        </Line>
+        {/* Núcleo: el destello real de la luciérnaga. */}
+        <Circle cx={0} cy={0} r={light.radius * 0.4} color={coreColor} opacity={coreOpacity}>
+          <BlurMask blur={0.5} style="normal" />
+        </Circle>
+      </Group>
+    );
+  }
+
+  if (particleStyle === 'petal') {
+    return (
+      <Group transform={groupTransform}>
+        <Circle cx={0} cy={0} r={light.radius * 0.9} color={light.color} opacity={haloOpacity}>
+          <BlurMask blur={light.radius * 1.6} style="normal" />
+        </Circle>
+        <Group transform={petalTransform}>
+          <Path
+            path={PETAL_PATH}
+            color={light.color}
+            opacity={coreOpacity}
+            transform={[{ scale: light.radius * 1.3 }]}
+          >
+            <BlurMask blur={0.4} style="normal" />
+          </Path>
+        </Group>
+      </Group>
+    );
+  }
+
+  if (particleStyle === 'snowflake') {
+    const arm = light.radius * 2.2;
+    return (
+      <Group transform={groupTransform}>
+        <Circle cx={0} cy={0} r={light.radius} color={light.color} opacity={haloOpacity}>
+          <BlurMask blur={light.radius * 1.8} style="normal" />
+        </Circle>
+        <Group transform={snowflakeTransform}>
+          {[0, 60, 120].map((deg) => {
+            const rad = (deg * Math.PI) / 180;
+            const dx = Math.cos(rad) * arm;
+            const dy = Math.sin(rad) * arm;
+            return (
+              <Line
+                key={deg}
+                p1={vec(-dx, -dy)}
+                p2={vec(dx, dy)}
+                color={coreColor}
+                opacity={0.75}
+                strokeWidth={0.6}
+              />
+            );
+          })}
+        </Group>
+        <Circle cx={0} cy={0} r={light.radius * 0.3} color={coreColor} opacity={coreOpacity}>
+          <BlurMask blur={0.4} style="normal" />
+        </Circle>
+      </Group>
+    );
+  }
+
+  // 'star' (tema por defecto): halo + núcleo, sin forma adicional.
   return (
-    <>
-      {/* Halo: el resplandor difuso, con el color de la luz. */}
-      <Circle cx={cx} cy={cy} r={light.radius} color={light.color} opacity={haloOpacity}>
+    <Group transform={groupTransform}>
+      <Circle cx={0} cy={0} r={light.radius} color={light.color} opacity={haloOpacity}>
         <BlurMask blur={light.radius * 1.8} style="normal" />
       </Circle>
-      {/* Núcleo: un punto pequeño y más brillante, casi blanco — como el
-          centro caliente de una luciérnaga o una estrella. */}
-      <Circle
-        cx={cx}
-        cy={cy}
-        r={light.radius * 0.4}
-        color={coreColor}
-        opacity={coreOpacity}
-      >
+      <Circle cx={0} cy={0} r={light.radius * 0.4} color={coreColor} opacity={coreOpacity}>
         <BlurMask blur={0.5} style="normal" />
       </Circle>
-    </>
+    </Group>
   );
 }
 
@@ -300,7 +449,7 @@ interface AmbientSkyProps {
  */
 export function AmbientSky({ density = 14 }: AmbientSkyProps) {
   const { width, height } = useWindowDimensions();
-  const { colors } = useTheme();
+  const { colors, theme } = useTheme();
   // Solo acentos de luz de la paleta del tema activo — nunca colores nuevos.
   const lightColors = useMemo(
     () => [colors.gold, colors.lavender, colors.lime, colors.ivory],
@@ -343,7 +492,12 @@ export function AmbientSky({ density = 14 }: AmbientSkyProps) {
           />
         ))}
         {lights.map((light, i) => (
-          <FloatingLight key={i} light={light} coreColor={colors.ivory} />
+          <FloatingLight
+            key={i}
+            light={light}
+            coreColor={colors.ivory}
+            particleStyle={theme.particleStyle}
+          />
         ))}
       </Canvas>
     </View>

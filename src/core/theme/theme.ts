@@ -15,6 +15,11 @@
 
 export type ThemeId = 'indigo' | 'forest' | 'plum' | 'frost';
 
+/** Forma de las partículas flotantes del fondo (`AmbientSky`) — 'star' es
+ * el punto/halo original, los demás son la seña visual propia de cada
+ * tema de pago. Nunca afecta `moodPalette.ts`. */
+export type ParticleStyle = 'star' | 'firefly' | 'petal' | 'snowflake';
+
 export interface ThemeColors {
   background: string;
   surface: string;
@@ -46,6 +51,7 @@ export interface ThemeDefinition {
   free: boolean;
   colors: ThemeColors;
   fonts: ThemeFonts;
+  particleStyle: ParticleStyle;
 }
 
 export const THEMES: Record<ThemeId, ThemeDefinition> = {
@@ -73,6 +79,7 @@ export const THEMES: Record<ThemeId, ThemeDefinition> = {
       heading: 'CormorantGaramond_500Medium_Italic',
       quote: 'CormorantGaramond_400Regular_Italic',
     },
+    particleStyle: 'star',
   },
   forest: {
     id: 'forest',
@@ -98,6 +105,7 @@ export const THEMES: Record<ThemeId, ThemeDefinition> = {
       heading: 'Fraunces_600SemiBold_Italic',
       quote: 'Fraunces_400Regular_Italic',
     },
+    particleStyle: 'firefly',
   },
   plum: {
     id: 'plum',
@@ -123,6 +131,7 @@ export const THEMES: Record<ThemeId, ThemeDefinition> = {
       heading: 'Italiana_400Regular',
       quote: 'Italiana_400Regular',
     },
+    particleStyle: 'petal',
   },
   frost: {
     id: 'frost',
@@ -148,6 +157,7 @@ export const THEMES: Record<ThemeId, ThemeDefinition> = {
       heading: 'BodoniModa_600SemiBold',
       quote: 'BodoniModa_500Medium_Italic',
     },
+    particleStyle: 'snowflake',
   },
 };
 
