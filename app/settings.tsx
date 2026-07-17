@@ -120,11 +120,11 @@ export default function Settings() {
       return;
     }
     Alert.alert(
-      'Desbloquear temas',
-      'Un solo pago único desbloquea los 4 temas visuales y quita los anuncios.\n\n(Marcador de prueba: todavía no está conectado a un cobro real de Play Store.)',
+      'Una taza de café para Lumma',
+      'Lumma es un proyecto pequeño, hecho por una sola persona. Con el precio de un café, desbloqueas los 4 temas visuales y quitas los anuncios para siempre.\n\n(Marcador de prueba: todavía no está conectado a un cobro real de Play Store.)',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Simular compra — $2', onPress: () => devUnlock() },
+        { text: 'Comprar un café — $2', onPress: () => devUnlock() },
       ]
     );
   }
