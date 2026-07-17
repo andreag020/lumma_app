@@ -74,7 +74,12 @@ function makeLights(
       twinkleDelay: Math.random() * 1800,
       rotationDuration: 7000 + Math.random() * 6000,
       rotationDirection: Math.random() < 0.5 ? 1 : -1,
-      wingFlapDuration: 130 + Math.random() * 110,
+      // Antes 130–240ms: ese ritmo tan alto (varios ciclos por segundo,
+      // sostenido, en hasta 14 luciérnagas a la vez) es la animación más
+      // rápida de todo el componente por lejos y generaba parpadeos tipo
+      // glitch tras un minuto o más de uso sostenido — más lento pero
+      // sigue leyéndose como aleteo.
+      wingFlapDuration: 320 + Math.random() * 180,
     });
   }
   return lights;
@@ -216,7 +221,10 @@ function FloatingLight({
         <Circle cx={0} cy={0} r={light.radius * 1.7} color={light.color} opacity={haloOpacity}>
           <BlurMask blur={light.radius * 2.4} style="normal" />
         </Circle>
-        {/* Alas cortas y redondeadas que aletean desde el cuerpo. */}
+        {/* Alas cortas y redondeadas que aletean desde el cuerpo. Sin
+            BlurMask propio: es la pieza que más rota por segundo, y un
+            blur recalculado a ese ritmo era el principal costo detrás
+            del parpadeo tipo glitch tras un rato de uso. */}
         <Group transform={leftWingTransform}>
           <Oval
             x={-wingWidth}
@@ -224,10 +232,8 @@ function FloatingLight({
             width={wingWidth}
             height={wingHeight}
             color={coreColor}
-            opacity={0.5}
-          >
-            <BlurMask blur={0.5} style="normal" />
-          </Oval>
+            opacity={0.45}
+          />
         </Group>
         <Group transform={rightWingTransform}>
           <Oval
@@ -236,10 +242,8 @@ function FloatingLight({
             width={wingWidth}
             height={wingHeight}
             color={coreColor}
-            opacity={0.5}
-          >
-            <BlurMask blur={0.5} style="normal" />
-          </Oval>
+            opacity={0.45}
+          />
         </Group>
         {/* Núcleo: el destello real de la luciérnaga. */}
         <Circle cx={0} cy={0} r={light.radius * 0.55} color={coreColor} opacity={coreOpacity}>
